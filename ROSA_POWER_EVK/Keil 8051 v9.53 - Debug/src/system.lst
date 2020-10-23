@@ -1,0 +1,187 @@
+C51 COMPILER V9.53.0.0   SYSTEM                                                            08/06/2020 18:09:19 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE SYSTEM
+OBJECT MODULE PLACED IN .\src\system.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\system.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2) 
+                    -FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/80
+                    -51/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F340/inc;
+                    -C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpress_Ec
+                    -ho/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\system.lst) COND PAGEWI
+                    -DTH(120) PAGELENGTH(65) OBJECT(.\src\system.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       system.c
+   6          //
+   7          // description:       system set file
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          #include "include.h"
+  16          
+  17          
+  18          //-----------------------------------------------------------------------------
+  19          // SiLabs_Startup() Routine
+  20          // ----------------------------------------------------------------------------
+  21          // This function is called immediately after reset, before the initialization
+  22          // code is run in SILABS_STARTUP.A51 (which runs before main() ). This is a
+  23          // useful place to disable the watchdog timer, which is enable by default
+  24          // and may trigger before main() in some instances.
+  25          //-----------------------------------------------------------------------------
+  26          void SiLabs_Startup (void)
+  27          {
+  28   1              PCA0MD &= ~PCA0MD_WDTE__BMASK;   // Disable watchdog timer
+  29   1      }
+  30          
+  31          
+  32          //-----------------------------------------------------------------------------
+  33          // VDDMon_Init
+  34          //-----------------------------------------------------------------------------
+  35          //
+  36          // Return Value : None
+  37          // Parameters   : None
+  38          //
+  39          // This function initializes the VDD Monitor and enables it as a reset source.
+  40          // The VDD Monitor is enabled following a power-on reset, but this routine
+  41          // explicitly enables the VDD Monitor.
+  42          //
+  43          // Note: If the VDD Monitor is not enabled or not enabled as a reset source,
+  44          // any attempt to write or erase Flash will cause a Flash Error Device Reset.
+  45          //-----------------------------------------------------------------------------
+  46          void VDDMon_Init(void)
+  47          {
+  48   1         // VDM0CN and RSTSRC are accessible from all SFR pages
+  49   1      
+  50   1         // Step 1. Enable the VDD Monitor ( VDMEN bit in VDM0CN = ??.
+C51 COMPILER V9.53.0.0   SYSTEM                                                            08/06/2020 18:09:19 PAGE 2   
+
+  51   1         VDM0CN = VDM0CN_VDMEN__ENABLED;  // Enable the VDD Monitor
+  52   1      
+  53   1         // Step 2. Wait for the VDD Monitor to stabilize (approximately 5 ).
+  54   1         // Note: This delay should be omitted if software contains routines which
+  55   1         // erase or write Flash memory.
+  56   1         // Omitted in this code
+  57   1         WITE_VDD_STABILIZE;
+  58   1      
+  59   1         // Step 3. Select the VDD Monitor as a reset source (PORSF bit in
+  60   1         // RSTSRC = ??.
+  61   1         RSTSRC = RSTSRC_PORSF__SET;
+  62   1      }
+  63          
+  64          
+  65          // -------------------------------
+  66          // Initialization Functions
+  67          /**************************************************************************//**
+  68           * @brief clock initialization
+  69           *
+  70           * Set fastest system clock (48Mhz)
+  71           *****************************************************************************/
+  72          void Sysclk_Init (void)
+  73          {
+  74   1              /*
+  75   1              OSCICN  = OSCICN_IOSCEN__ENABLED;          // Enable intosc (48Mhz)
+  76   1              FLSCL  |= FLSCL_FLRT__SYSCLK_BELOW_48_MHZ; // Set flash scale
+  77   1              PFE0CN |= PFE0CN_PFEN__ENABLED;            // Enable prefetch
+  78   1              CLKSEL  = CLKSEL_CLKSL__CLKMUL;            // select full speed sysclk
+  79   1              */
+  80   1              FLSCL  |= FLSCL_FLRT__SYSCLK_BELOW_48_MHZ;
+  81   1              PFE0CN |= PFE0CN_PFEN__ENABLED;
+  82   1      
+  83   1              OSCICN |= OSCICN_IOSCEN__ENABLED
+  84   1                     |  OSCICN_IFCN__HFOSC_DIV_1;        // Select full speed HFOSC
+  85   1      
+  86   1              CLKMUL  = 0x00;                            // clear multiplier
+  87   1              CLKMUL |= CLKMUL_MULEN__ENABLED;           // enable multiplier
+  88   1              WITE_VDD_STABILIZE;
+  89   1              CLKMUL |= CLKMUL_MULINIT__SET;             // Initialize multiplier
+  90   1              WITE_VDD_STABILIZE;
+  91   1      
+  92   1              while(!(CLKMUL & CLKMUL_MULRDY__BMASK));   // Wati for multiplier to lock
+  93   1      
+  94   1              CLKSEL = CLKSEL_CLKSL__CLKMUL;             // select full speed sysclk
+  95   1      }
+  96          
+  97          
+  98          //-----------------------------------------------------------------------------
+  99          // SystemReset
+ 100          //-----------------------------------------------------------------------------
+ 101          //
+ 102          // Return Value:  None
+ 103          // Parameters:    None
+ 104          //
+ 105          // Configures     SystemReset
+ 106          //
+ 107          //-----------------------------------------------------------------------------
+ 108          void SystemReset(void)
+ 109          {
+ 110   1              /*
+ 111   1              * Bit4 -- SWRSF: Software Reset Force and Flag.
+ 112   1              * 0: Read: Source of last reset was not a write to the SWRSF bit; Write: No Effect.
+ 113   1              * 1: Read: Source of last was a write to the SWRSF bit; Write: Forces a system reset.
+C51 COMPILER V9.53.0.0   SYSTEM                                                            08/06/2020 18:09:19 PAGE 3   
+
+ 114   1              */
+ 115   1              RSTSRC |= 0x10;
+ 116   1      }
+ 117          
+ 118          
+ 119          
+ 120          
+ 121          
+ 122          
+ 123          
+ 124          
+ 125          
+ 126          
+ 127          
+ 128          
+ 129          
+ 130          
+ 131          
+ 132          
+ 133          
+ 134          
+ 135          
+ 136          
+ 137          
+ 138          
+ 139          
+ 140          
+ 141          
+ 142          
+ 143          
+ 144          
+ 145          
+ 146          
+ 147          
+ 148          
+ 149          
+ 150          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    143    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

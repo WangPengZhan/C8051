@@ -1,0 +1,890 @@
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE COMMAND_ITEM
+OBJECT MODULE PLACED IN .\src\command_item.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.60\BIN\C51.exe D:\workfile\ROSA
+                    -_EVK_V2\software\F00016_ROSA_POWE_EVK_V2\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\command_item.c OMF2 SMALL DEBUG OBJEC
+                    -TEXTEND ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/Si
+                    -mplicityStudio/v4/developer/sdks/8051/v4.1.7//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks
+                    -/8051/v4.1.7//Device/C8051F340/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.7//examples/C8051F340DK/U
+                    -SB/USBXpress/C8051F340_USBXpress_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.7//Lib/USBXpress) 
+                    -PRINT(.\src\command_item.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\command_item.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       command_item.c
+   6          //
+   7          // description:       USB command process
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          
+  16          #include "include.h"
+  17          
+  18          // 命令执行函数数组
+  19          SI_SEGMENT_VARIABLE(Command_Array[COMMANDTYPE_COUNT_MAX], CommandItem_s, SI_SEG_XDATA);
+  20          SI_SEGMENT_VARIABLE(usb_msg, udi_command_msg_s, SI_SEG_XDATA);
+  21          SI_SEGMENT_VARIABLE(MCUPer,  extern struct MCU_Config_Parameters_struct,  SI_SEG_XDATA);
+  22          SI_SEGMENT_VARIABLE(Port_Monitor,  extern uint8_t,  SI_SEG_XDATA);
+  23          SI_SEGMENT_VARIABLE(DAC_array[8],  extern uint16_t, SI_SEG_XDATA );
+  24          SI_SEGMENT_VARIABLE(gFlagWriteFlash, extern uint8_t, SI_SEG_XDATA);
+  25          SI_SEGMENT_VARIABLE(rdata_array[30],  uint16_t, SI_SEG_XDATA );
+  26          SI_SEGMENT_VARIABLE(ad5629IsCuted, extern uint8_t, SI_SEG_XDATA);
+  27          //-----------------------------------------------------------------------------
+  28          // USB_Command_Init
+  29          //-----------------------------------------------------------------------------
+  30          //
+  31          // Return Value:  None
+  32          // Parameters:    None
+  33          //
+  34          // Configures     Initialize USB Command tree
+  35          //
+  36          //-----------------------------------------------------------------------------
+  37          void USB_Command_Init (void)
+  38          {
+  39   1              // General Command
+  40   1              Command_Array[0].count = 4;
+  41   1              Command_Array[0].item[0].pfun = Func_CMD_General_QueryVersion;
+  42   1              Command_Array[0].item[1].pfun = Func_CMD_General_GetEVK_ID;
+  43   1              Command_Array[0].item[2].pfun = Func_CMD_General_SetEVK_ID;
+  44   1              Command_Array[0].item[3].pfun = Func_CMD_General_Reboot;
+  45   1      
+  46   1              // MCU Register Command
+  47   1              Command_Array[1].count = 4;
+  48   1              Command_Array[1].item[0].pfun = Func_CMD_MCU_ReadRegister;
+  49   1              Command_Array[1].item[1].pfun = Func_CMD_MCU_WriteRegister;
+  50   1              Command_Array[1].item[2].pfun = Func_CMD_MCU_SetRegister;
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 2   
+
+  51   1              Command_Array[1].item[3].pfun = Func_CMD_MCU_ClearRegister;
+  52   1      
+  53   1              // MCU Register Command
+  54   1              Command_Array[2].count = 2;
+  55   1              Command_Array[2].item[0].pfun = Func_CMD_I2C_ReadArray;
+  56   1              Command_Array[2].item[1].pfun = Func_CMD_I2C_WriteArray;
+  57   1      
+  58   1              // MCU adc read
+  59   1              Command_Array[3].count = 2;
+  60   1              Command_Array[3].item[0].pfun = Func_CMD_ADC_GetFeature;
+  61   1              Command_Array[3].item[1].pfun = Func_CMD_ADC_SetFeature;
+  62   1      
+  63   1              // AD7298 Command
+  64   1              Command_Array[4].count = 1;
+  65   1              Command_Array[4].item[0].pfun = Func_CMD_AD7298_Read;
+  66   1      
+  67   1              // SI544 Command
+  68   1              //Command_Array[5].count = 2;
+  69   1              //Command_Array[5].item[0].pfun = Func_CMD_SI544_Set;
+  70   1              //Command_Array[5].item[1].pfun = Func_CMD_SI544_Read;
+  71   1      
+  72   1              // Control monitor
+  73   1              Command_Array[6].count = 2;
+  74   1              Command_Array[6].item[0].pfun = Func_CMD_Ctrl_GetPortMonitor;
+  75   1              Command_Array[6].item[1].pfun = Func_CMD_Ctrl_SetPortMonitor;
+  76   1      
+  77   1              //PAC1932 Command
+  78   1              Command_Array[7].count = 2;
+  79   1              Command_Array[7].item[0].pfun = Func_CMD_PAC1932_Read;
+  80   1              Command_Array[7].item[1].pfun = Func_CMD_PAC1932_Read_BUS;
+  81   1      
+  82   1              //Coeff Command
+  83   1              Command_Array[8].count = 2;
+  84   1              Command_Array[8].item[0].pfun = Func_CMD_Get_AD7298_Coeff;
+  85   1              Command_Array[8].item[1].pfun = Func_CMD_Set_AD7298_Coeff;
+  86   1      
+  87   1              //Power Command
+  88   1              Command_Array[9].count = 2;
+  89   1              Command_Array[9].item[0].pfun = Func_CMD_Get_Power;
+  90   1              Command_Array[9].item[1].pfun = Func_CMD_Set_Power;
+  91   1      }
+  92          
+  93          
+  94          //-----------------------------------------------------------------------------
+  95          // USB_Command_Decode
+  96          //-----------------------------------------------------------------------------
+  97          //
+  98          // Return Value:  None
+  99          // Parameters:    None
+ 100          //
+ 101          // Configures     Decode USB Command
+ 102          //
+ 103          //-----------------------------------------------------------------------------
+ 104          bool USB_Command_Decode()
+ 105          {
+ 106   1              uint8_t status;
+ 107   1      
+ 108   1              // 判断命令类型是否超过范围
+ 109   1              if( usb_msg.write.cmd_type >= COMMANDTYPE_COUNT_MAX )
+ 110   1              {
+ 111   2                      usb_msg.read.cmd_status = sCMDUnknownType;
+ 112   2                      return false;
+ 113   2              }
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 3   
+
+ 114   1      
+ 115   1              // 判断此命令类型下得命令ID是否超过范围
+ 116   1              if( usb_msg.write.cmd_id >= Command_Array[usb_msg.write.cmd_type].count )
+ 117   1              {
+ 118   2                      usb_msg.read.cmd_status = sCMDUnknownId;
+ 119   2                      return false;
+ 120   2              }
+ 121   1      
+ 122   1              // 执行命令处理函数，返回执行状态代码
+ 123   1              if( Command_Array[usb_msg.write.cmd_type].item[usb_msg.write.cmd_id].pfun != NULL )
+ 124   1              {
+ 125   2                      status = Command_Array[usb_msg.write.cmd_type].item[usb_msg.write.cmd_id].pfun();
+ 126   2      
+ 127   2                      if ( status != sCMDDoing )
+ 128   2                  {
+ 129   3                              usb_msg.read.cmd_status = status;
+ 130   3                  }
+ 131   2              }
+ 132   1              else
+ 133   1              {
+ 134   2                      usb_msg.read.cmd_status = sCMDSuccess;
+ 135   2              }
+ 136   1      
+ 137   1              return true;
+ 138   1      }
+ 139          
+ 140          
+ 141          //-----------------------------------------------------------------------------
+ 142          // Func_CMD_General_QueryVersion
+ 143          //-----------------------------------------------------------------------------
+ 144          //
+ 145          // Return Value:  None
+ 146          // Parameters:    None
+ 147          //
+ 148          // Configures     Get Firmware version
+ 149          //
+ 150          //-----------------------------------------------------------------------------
+ 151          uint8_t Func_CMD_General_QueryVersion( void )
+ 152          {
+ 153   1              usb_msg.read.databuf[0x00] = FIRMWARE_NAME1;
+ 154   1              usb_msg.read.databuf[0x01] = FIRMWARE_NAME2;
+ 155   1              usb_msg.read.databuf[0x02] = FIRMWARE_NAME3;
+ 156   1              usb_msg.read.databuf[0x03] = VEISION;
+ 157   1              usb_msg.read.databuf[0x04] = BUILD;
+ 158   1      
+ 159   1              usb_msg.read.datalength = 5;
+ 160   1              return sCMDSuccess;
+ 161   1      }
+ 162          
+ 163          
+ 164          
+ 165          //-----------------------------------------------------------------------------
+ 166          // Func_CMD_General_GetEVK_ID
+ 167          //-----------------------------------------------------------------------------
+ 168          //
+ 169          // Return Value:  None
+ 170          // Parameters:    None
+ 171          //
+ 172          // Get EVK ID
+ 173          //
+ 174          //-----------------------------------------------------------------------------
+ 175          uint8_t Func_CMD_General_GetEVK_ID (void)
+ 176          {
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 4   
+
+ 177   1              int i;
+ 178   1      
+ 179   1      
+ 180   1              for( i = 0; i < 4; i++ )
+ 181   1              {
+ 182   2                      usb_msg.read.databuf[i] = MCUPer.gID[i];
+ 183   2              }
+ 184   1      
+ 185   1              usb_msg.read.datalength = 4;
+ 186   1              return sCMDSuccess;
+ 187   1      }
+ 188          
+ 189          
+ 190          //-----------------------------------------------------------------------------
+ 191          // Func_CMD_General_SetEVK_ID
+ 192          //-----------------------------------------------------------------------------
+ 193          //
+ 194          // Return Value:  None
+ 195          // Parameters:    None
+ 196          //
+ 197          // set EVK ID
+ 198          //
+ 199          //-----------------------------------------------------------------------------
+ 200          uint8_t Func_CMD_General_SetEVK_ID (void)
+ 201          {
+ 202   1              int i;
+ 203   1              //uint16_t length;
+ 204   1      
+ 205   1              //length = usb_msg.write.datalength;
+ 206   1              for( i = 0; i < 4; i++ )
+ 207   1              {
+ 208   2                      MCUPer.gID[i] = usb_msg.write.databuf[i];
+ 209   2              }
+ 210   1      
+ 211   1              gFlagWriteFlash = 1;
+ 212   1              return sCMDSuccess;
+ 213   1      }
+ 214          
+ 215          
+ 216          //-----------------------------------------------------------------------------
+ 217          // Func_CMD_General_Reboot
+ 218          //-----------------------------------------------------------------------------
+ 219          //
+ 220          // Return Value:  None
+ 221          // Parameters:    None
+ 222          //
+ 223          // Configures     Reboot MCU system
+ 224          //
+ 225          //-----------------------------------------------------------------------------
+ 226          uint8_t Func_CMD_General_Reboot( void )
+ 227          {
+ 228   1              funccallback = SystemReset;
+ 229   1              usb_msg.read.datalength = 0;
+ 230   1              return sCMDSuccess;
+ 231   1      }
+ 232          
+ 233          
+ 234          //-----------------------------------------------------------------------------
+ 235          // Func_CMD_MCU_ReadRegister
+ 236          //-----------------------------------------------------------------------------
+ 237          //
+ 238          // Return Value:  None
+ 239          // Parameters:    None
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 5   
+
+ 240          //
+ 241          // Configures     Read MCU register
+ 242          //
+ 243          //-----------------------------------------------------------------------------
+ 244          uint8_t Func_CMD_MCU_ReadRegister( void )
+ 245          {
+ 246   1         uint16_t adr;
+ 247   1         uint16_t rdata;
+ 248   1      
+ 249   1              adr = ((uint16_t)usb_msg.write.databuf[0x00]<<8) |
+ 250   1                    ((uint16_t)usb_msg.write.databuf[0x01]<<0);
+ 251   1      
+ 252   1         rdata = MCU_Register_Read(adr);
+ 253   1      
+ 254   1         usb_msg.read.databuf[0x02] = (uint8_t)(rdata>>8);
+ 255   1         usb_msg.read.databuf[0x03] = (uint8_t)(rdata>>0);
+ 256   1         usb_msg.read.datalength    = 4;
+ 257   1      
+ 258   1         return sCMDSuccess;
+ 259   1      }
+ 260          
+ 261          
+ 262          //-----------------------------------------------------------------------------
+ 263          // Func_CMD_MCU_WriteRegister
+ 264          //-----------------------------------------------------------------------------
+ 265          //
+ 266          // Return Value:  None
+ 267          // Parameters:    None
+ 268          //
+ 269          // Configures     Write MCU register
+ 270          //
+ 271          //-----------------------------------------------------------------------------
+ 272          uint8_t Func_CMD_MCU_WriteRegister( void )
+ 273          {
+ 274   1              uint16_t adr;
+ 275   1              uint16_t wdata, rdata;
+ 276   1      
+ 277   1              adr = ((uint16_t)usb_msg.write.databuf[0x00]<<8) |
+ 278   1                    ((uint16_t)usb_msg.write.databuf[0x01]<<0);
+ 279   1      
+ 280   1              wdata = (uint16_t)(usb_msg.write.databuf[0x02]<<8) |
+ 281   1                              (uint16_t)(usb_msg.write.databuf[0x03]<<0);
+ 282   1      
+ 283   1              rdata = MCU_Register_Write(adr,wdata);
+ 284   1      
+ 285   1              usb_msg.read.databuf[0x02] = (uint8_t)(rdata>>8);
+ 286   1              usb_msg.read.databuf[0x03] = (uint8_t)(rdata>>0);
+ 287   1              usb_msg.read.datalength    = 4;
+ 288   1      
+ 289   1         return sCMDSuccess;
+ 290   1      }
+ 291          
+ 292          
+ 293          //-----------------------------------------------------------------------------
+ 294          // Func_CMD_MCU_SetRegister
+ 295          //-----------------------------------------------------------------------------
+ 296          //
+ 297          // Return Value:  None
+ 298          // Parameters:    None
+ 299          //
+ 300          // Configures     Set MCU register
+ 301          //
+ 302          //-----------------------------------------------------------------------------
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 6   
+
+ 303          uint8_t Func_CMD_MCU_SetRegister( void )
+ 304          {
+ 305   1              uint16_t adr;
+ 306   1              uint16_t wdata, rdata;
+ 307   1      
+ 308   1              adr = ((uint16_t)usb_msg.write.databuf[0x00]<<8) |
+ 309   1                    ((uint16_t)usb_msg.write.databuf[0x01]<<0);
+ 310   1      
+ 311   1              wdata = (uint16_t)(usb_msg.write.databuf[0x02]<<8) |
+ 312   1                              (uint16_t)(usb_msg.write.databuf[0x03]<<0);
+ 313   1      
+ 314   1              if(adr == (uint16_t)(0x80))
+ 315   1              {
+ 316   2                      if(wdata == (uint16_t)(0x01 << 2) )
+ 317   2                      {
+ 318   3                              SCL_HIZ();
+ 319   3                              SDA_HIZ();
+ 320   3                              ad5629IsCuted = 0x01;
+ 321   3                      }
+ 322   2              }
+ 323   1      
+ 324   1              rdata = MCU_Register_Read(adr);
+ 325   1              wdata = wdata|rdata;
+ 326   1              rdata = MCU_Register_Write(adr,wdata);
+ 327   1      
+ 328   1              usb_msg.read.databuf[0x02] = (uint8_t)(rdata>>8);
+ 329   1              usb_msg.read.databuf[0x03] = (uint8_t)(rdata>>0);
+ 330   1              usb_msg.read.datalength    = 4;
+ 331   1      
+ 332   1              return sCMDSuccess;
+ 333   1      }
+ 334          
+ 335          
+ 336          //-----------------------------------------------------------------------------
+ 337          // Func_CMD_MCU_ClearRegister
+ 338          //-----------------------------------------------------------------------------
+ 339          //
+ 340          // Return Value:  None
+ 341          // Parameters:    None
+ 342          //
+ 343          // Configures     Clear MCU register
+ 344          //
+ 345          //-----------------------------------------------------------------------------
+ 346          uint8_t Func_CMD_MCU_ClearRegister( void )
+ 347          {
+ 348   1         uint16_t adr;
+ 349   1         uint16_t wdata, rdata;
+ 350   1      
+ 351   1         adr = ((uint16_t)usb_msg.write.databuf[0x00]<<8) |
+ 352   1               ((uint16_t)usb_msg.write.databuf[0x01]<<0);
+ 353   1      
+ 354   1         wdata = ~( (uint16_t)(usb_msg.write.databuf[0x02]<<8) |
+ 355   1                            (uint16_t)(usb_msg.write.databuf[0x03]<<0) );
+ 356   1      
+ 357   1              if(adr == (uint16_t)(0x80))
+ 358   1              {
+ 359   2                      if(wdata == (uint16_t)~(0x01 << 2) )
+ 360   2                      {
+ 361   3                              P0      = 0x00;
+ 362   3                          P0MDIN  = 0xFF;
+ 363   3                              P0MDOUT = 0x00;
+ 364   3      
+ 365   3                              P1      = 0x00;
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 7   
+
+ 366   3                          P1MDIN  = 0xFF;
+ 367   3                              P1MDOUT = 0x00;
+ 368   3      
+ 369   3                              P2      = 0x00;
+ 370   3                          P2MDIN  = 0xFF;
+ 371   3                              P2MDOUT = 0x00;
+ 372   3      
+ 373   3                              P3      = 0x00;
+ 374   3                          P3MDIN  = 0xFF;
+ 375   3                              P3MDOUT = 0x00;
+ 376   3                      }
+ 377   2              }
+ 378   1      
+ 379   1         rdata = MCU_Register_Read(adr);
+ 380   1         wdata = wdata&rdata;
+ 381   1         rdata = MCU_Register_Write(adr,wdata);
+ 382   1      
+ 383   1         usb_msg.read.databuf[0x02] = (uint8_t)(rdata>>8);
+ 384   1         usb_msg.read.databuf[0x03] = (uint8_t)(rdata>>0);
+ 385   1         usb_msg.read.datalength    = 4;
+ 386   1      
+ 387   1         return sCMDSuccess;
+ 388   1      }
+ 389          
+ 390          
+ 391          //-----------------------------------------------------------------------------
+ 392          // Func_CMD_I2C_ReadArray
+ 393          //-----------------------------------------------------------------------------
+ 394          //
+ 395          // Return Value:  None
+ 396          // Parameters:    None
+ 397          //
+ 398          // Configures     I2C read array
+ 399          //
+ 400          //-----------------------------------------------------------------------------
+ 401          uint8_t Func_CMD_I2C_ReadArray( void )
+ 402          {
+ 403   1         uint8_t  sleaddr;
+ 404   1         uint8_t  regaddr;
+ 405   1         uint16_t length;
+ 406   1      
+ 407   1         sleaddr = usb_msg.write.databuf[0x00];
+ 408   1         regaddr = usb_msg.write.databuf[0x01];
+ 409   1         length  = ( (uint16_t)usb_msg.write.databuf[0x02]<<8) |
+ 410   1                           ( (uint16_t)usb_msg.write.databuf[0x03]<<0);
+ 411   1      
+ 412   1        if( (sleaddr & 0xFE) == 0xAC )
+ 413   1         {
+ 414   2                 usb_msg.read.databuf[0x04] = (uint8_t)(DAC_array[regaddr&0x07]>>8);
+ 415   2                 usb_msg.read.databuf[0x05] = (uint8_t)(DAC_array[regaddr&0x07]>>0);
+ 416   2         }else{
+ 417   2                 if ( I2C_Master_readBytes( sleaddr, regaddr, length,
+ 418   2                                           (uint8_t*)&(usb_msg.read.databuf[0x04])) )
+ 419   2                 {
+ 420   3                        usb_msg.read.datalength  = 0;
+ 421   3                    return sCMDFailed;
+ 422   3                 }
+ 423   2         }
+ 424   1      
+ 425   1         usb_msg.read.datalength  = length;
+ 426   1         return sCMDSuccess;
+ 427   1      }
+ 428          
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 8   
+
+ 429          
+ 430          //-----------------------------------------------------------------------------
+ 431          // Func_CMD_I2C_WriteArray
+ 432          //-----------------------------------------------------------------------------
+ 433          //
+ 434          // Return Value:  None
+ 435          // Parameters:    None
+ 436          //
+ 437          // Configures     I2C write array
+ 438          //
+ 439          //-----------------------------------------------------------------------------
+ 440          uint8_t Func_CMD_I2C_WriteArray( void )
+ 441          {
+ 442   1          uint8_t  sleaddr;
+ 443   1          uint8_t  regaddr;
+ 444   1          uint16_t length;
+ 445   1      
+ 446   1          sleaddr = usb_msg.write.databuf[0x00];
+ 447   1          regaddr = usb_msg.write.databuf[0x01];
+ 448   1          length  = ( (uint16_t)usb_msg.write.databuf[0x02]<<8) |
+ 449   1                            ( (uint16_t)usb_msg.write.databuf[0x03]<<0);
+ 450   1      
+ 451   1          if( (sleaddr & 0xFE) == 0xAC )
+ 452   1          {
+ 453   2                  DAC_array[regaddr&0x07]  = ( (uint16_t)usb_msg.write.databuf[0x04]<<8) |
+ 454   2                                                             ( (uint16_t)usb_msg.write.databuf[0x05]<<0);
+ 455   2          }
+ 456   1      
+ 457   1          if ( I2C_Master_writeBytes( sleaddr, regaddr, length,
+ 458   1                                      (uint8_t *)&(usb_msg.write.databuf[0x04])) )
+ 459   1          {
+ 460   2              usb_msg.read.datalength = 0;
+ 461   2              return sCMDFailed;
+ 462   2          }
+ 463   1      
+ 464   1          usb_msg.read.datalength = length;
+ 465   1          return sCMDSuccess;
+ 466   1      }
+ 467          
+ 468          //-----------------------------------------------------------------------------
+ 469          // Func_CMD_ADC_GetFeature
+ 470          //-----------------------------------------------------------------------------
+ 471          //
+ 472          // Return Value:  None
+ 473          // Parameters:    None
+ 474          //
+ 475          // Configures     Get MCU ADC feature
+ 476          //
+ 477          //-----------------------------------------------------------------------------
+ 478          uint8_t  Func_CMD_ADC_GetFeature(void)
+ 479          {
+ 480   1              int i;
+ 481   1      
+ 482   1              uint8_t *pData = (uint8_t SI_SEG_XDATA*)(&MCUPer);
+ 483   1      
+ 484   1              for( i = 0; i < FLASH_USE_SIZE; i++ )
+ 485   1              {
+ 486   2                      usb_msg.read.databuf[i] = pData[i];
+ 487   2              }
+ 488   1      
+ 489   1              usb_msg.read.datalength = FLASH_USE_SIZE;
+ 490   1              return sCMDSuccess;
+ 491   1      }
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 9   
+
+ 492          
+ 493          //-----------------------------------------------------------------------------
+ 494          // Func_CMD_ADC_SetFeature
+ 495          //-----------------------------------------------------------------------------
+ 496          //
+ 497          // Return Value:  None
+ 498          // Parameters:    None
+ 499          //
+ 500          // Configures     Set MCU ADC feature
+ 501          //
+ 502          //-----------------------------------------------------------------------------
+ 503          uint8_t  Func_CMD_ADC_SetFeature(void)
+ 504          {
+ 505   1              int i;
+ 506   1      
+ 507   1              uint8_t *pData = (uint8_t SI_SEG_XDATA*)(&MCUPer);
+ 508   1      
+ 509   1              for( i = 0; i < FLASH_USE_SIZE; i++ )
+ 510   1              {
+ 511   2                      pData[i] = usb_msg.write.databuf[i];
+ 512   2              }
+ 513   1      
+ 514   1              //fADC_bits = (float)(pow( 2, MCUPer.ADC_Bits ))-1;
+ 515   1      
+ 516   1              gFlagWriteFlash = 1;
+ 517   1      
+ 518   1              usb_msg.read.datalength = 0;
+ 519   1              return sCMDSuccess;
+ 520   1      }
+ 521          
+ 522          //-----------------------------------------------------------------------------
+ 523          // Func_CMD_AD7298_Read
+ 524          //-----------------------------------------------------------------------------
+ 525          //
+ 526          // Return Value:  None
+ 527          // Parameters:    None
+ 528          //
+ 529          // Configures     AD7298 Read
+ 530          //
+ 531          //-----------------------------------------------------------------------------
+ 532          uint8_t Func_CMD_AD7298_Read( void )
+ 533          {
+ 534   1                 uint16_t adr;
+ 535   1                 uint16_t rdata;
+ 536   1                 uint8_t i;
+ 537   1                 uint32_t rdata_sum = 0;
+ 538   1                      adr = ((uint16_t)usb_msg.write.databuf[0x00]<<8) |
+ 539   1                            ((uint16_t)usb_msg.write.databuf[0x01]<<0);
+ 540   1                 for(i = 0; i < 30; i++){
+ 541   2                         rdata_array[i] = ad7298_read(adr);
+ 542   2                 }
+ 543   1                 sort(rdata_array,30);
+ 544   1                 for(i = 0; i < 10 ; i++){
+ 545   2                         rdata_sum += rdata_array[10 + i];
+ 546   2                 }
+ 547   1                 rdata = rdata_sum / 10;
+ 548   1      
+ 549   1                 usb_msg.read.databuf[0x02] = (uint8_t)(rdata>>8);
+ 550   1                 usb_msg.read.databuf[0x03] = (uint8_t)(rdata>>0);
+ 551   1                 usb_msg.read.datalength    = 4;
+ 552   1      
+ 553   1                 return sCMDSuccess;
+ 554   1      }
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 10  
+
+ 555          /*
+ 556          //-----------------------------------------------------------------------------
+ 557          // Func_CMD_SI544_Set
+ 558          //-----------------------------------------------------------------------------
+ 559          //
+ 560          // Return Value:  None
+ 561          // Parameters:    None
+ 562          //
+ 563          // Configures     SI544 Set
+ 564          //
+ 565          //-----------------------------------------------------------------------------
+ 566          uint8_t Func_CMD_SI544_Set( void )
+ 567          {
+ 568                          uint8_t i;
+ 569                          uint8_t *Data =( uint8_t *)(&si544_freq);
+ 570                          for( i = 0; i < 4; i++ ){
+ 571                             Data[i] = usb_msg.write.databuf[i];
+ 572                          }
+ 573                          SI544_Config(si544_freq);
+ 574          
+ 575                          usb_msg.read.datalength = 0;
+ 576                          return sCMDSuccess;
+ 577          }
+ 578          //-----------------------------------------------------------------------------
+ 579          
+ 580          // Func_CMD_SI544_Read
+ 581          //-----------------------------------------------------------------------------
+ 582          //
+ 583          // Return Value:  None
+ 584          // Parameters:    None
+ 585          //
+ 586          // Configures     SI544 Read
+ 587          //
+ 588          //-----------------------------------------------------------------------------
+ 589          uint8_t Func_CMD_SI544_Read( void )
+ 590          {
+ 591                     uint8_t *rdata =( uint8_t *)(&si544_freq);
+ 592                    // SI544_Read(rdata);
+ 593                     usb_msg.read.databuf[0x00] = rdata[0];
+ 594                     usb_msg.read.databuf[0x01] = rdata[1];
+ 595                     usb_msg.read.databuf[0x02] = rdata[2];
+ 596                     usb_msg.read.databuf[0x03] = rdata[3];
+ 597                     usb_msg.read.datalength    = 4;
+ 598          
+ 599                     return sCMDSuccess;
+ 600          }
+ 601          */
+ 602          //-----------------------------------------------------------------------------
+ 603          
+ 604          //-----------------------------------------------------------------------------
+ 605          // Func_CMD_Ctrl_GetPortMonitor
+ 606          //-----------------------------------------------------------------------------
+ 607          //
+ 608          // Return Value:  None
+ 609          // Parameters:    None
+ 610          //
+ 611          // Configures     Get this value portMonitor
+ 612          //
+ 613          //-----------------------------------------------------------------------------
+ 614          uint8_t  Func_CMD_Ctrl_GetPortMonitor (void)
+ 615          {
+ 616   1              usb_msg.read.databuf[0x00] = (Port_Monitor&0x01);
+ 617   1              usb_msg.read.datalength    = 0x01;
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 11  
+
+ 618   1              return sCMDSuccess;
+ 619   1      }
+ 620          
+ 621          
+ 622          //-----------------------------------------------------------------------------
+ 623          // Func_CMD_Ctrl_SetPortMonitor
+ 624          //-----------------------------------------------------------------------------
+ 625          //
+ 626          // Return Value:  None
+ 627          // Parameters:    None
+ 628          //
+ 629          // Configures     Set this value portMonitor
+ 630          //
+ 631          //-----------------------------------------------------------------------------
+ 632          uint8_t  Func_CMD_Ctrl_SetPortMonitor (void)
+ 633          {
+ 634   1              Port_Monitor = (usb_msg.write.databuf[0x00]&0x01);
+ 635   1              usb_msg.read.datalength = 0x01;
+ 636   1              return sCMDSuccess;
+ 637   1      }
+ 638          //-----------------------------------------------------------------------------
+ 639          // Func_CMD_PAC1932_Read
+ 640          //-----------------------------------------------------------------------------
+ 641          //
+ 642          // Return Value:  None
+ 643          // Parameters:    None
+ 644          //
+ 645          // Configures     PAC1932 Read
+ 646          //
+ 647          //-----------------------------------------------------------------------------
+ 648          uint8_t Func_CMD_PAC1932_Read( void )
+ 649          {
+ 650   1              int     i;
+ 651   1              float   value;
+ 652   1              uint16_t ADCValue;
+ 653   1              float    SamplingValue;
+ 654   1              uint8_t *pData = (uint8_t*)(&value);
+ 655   1              ADCValue = pac1932_read_vsense_1();
+ 656   1              SamplingValue = ADCValue;
+ 657   1              SamplingValue *= 100.;
+ 658   1              SamplingValue /= 0.3;
+ 659   1              SamplingValue /= 65536;
+ 660   1              SamplingValue *= 0.96;
+ 661   1          value = SamplingValue;
+ 662   1              for( i = 0; i < 4; i++ )
+ 663   1              {
+ 664   2                      usb_msg.read.databuf[i] = pData[i];
+ 665   2              }
+ 666   1              usb_msg.read.datalength = 4;
+ 667   1              return sCMDSuccess;
+ 668   1      
+ 669   1      }
+ 670          //-----------------------------------------------------------------------------
+ 671          // Func_CMD_PAC1932_Read BUS
+ 672          //-----------------------------------------------------------------------------
+ 673          //
+ 674          // Return Value:  None
+ 675          // Parameters:    None
+ 676          //
+ 677          // Configures     PAC1932 Read BUS
+ 678          //
+ 679          //-----------------------------------------------------------------------------
+ 680          uint8_t Func_CMD_PAC1932_Read_BUS( void )
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 12  
+
+ 681          {
+ 682   1              int     i;
+ 683   1              float   value;
+ 684   1              uint16_t ADCValue;
+ 685   1              float    SamplingValue;
+ 686   1              uint8_t *pData = (uint8_t*)(&value);
+ 687   1              ADCValue = pac1932_read_vbus_1();
+ 688   1              SamplingValue = ADCValue;
+ 689   1              SamplingValue *= 32.;
+ 690   1              SamplingValue /= 65536;
+ 691   1          value = SamplingValue;
+ 692   1              for( i = 0; i < 4; i++ )
+ 693   1              {
+ 694   2                      usb_msg.read.databuf[i] = pData[i];
+ 695   2              }
+ 696   1              usb_msg.read.datalength = 4;
+ 697   1              return sCMDSuccess;
+ 698   1      
+ 699   1      }
+ 700          //-----------------------------------------------------------------------------
+ 701          // Func_CMD_Get_AD7298_Coeff
+ 702          //-----------------------------------------------------------------------------
+ 703          //
+ 704          // Return Value:  None
+ 705          // Parameters:    None
+ 706          //
+ 707          // Get AD7298 Coeff
+ 708          //
+ 709          //-----------------------------------------------------------------------------
+ 710          uint8_t Func_CMD_Get_AD7298_Coeff (void)
+ 711          {
+ 712   1              int i;
+ 713   1              int lane;
+ 714   1              uint8_t *pData1;
+ 715   1              uint8_t *pData2;
+ 716   1              lane = usb_msg.write.databuf[0];
+ 717   1              pData1 = (uint8_t*)(&(MCUPer.Rssi_Meas[lane]));
+ 718   1              pData2 = (uint8_t*)(&(MCUPer.Rssi_Real[lane]));
+ 719   1              for( i = 0; i < 12; i++ )
+ 720   1              {
+ 721   2                      usb_msg.read.databuf[0x00 + 4*i ] = pData1[0x03 + 4*i ];
+ 722   2                      usb_msg.read.databuf[0x01 + 4*i ] = pData1[0x02 + 4*i ];
+ 723   2                      usb_msg.read.databuf[0x02 + 4*i ] = pData1[0x01 + 4*i ];
+ 724   2                      usb_msg.read.databuf[0x03 + 4*i ] = pData1[0x00 + 4*i ];
+ 725   2      
+ 726   2      
+ 727   2                      usb_msg.read.databuf[0x30 + 4*i ] = pData2[0x03 + 4*i ];
+ 728   2                      usb_msg.read.databuf[0x31 + 4*i ] = pData2[0x02 + 4*i ];
+ 729   2                      usb_msg.read.databuf[0x32 + 4*i ] = pData2[0x01 + 4*i ];
+ 730   2                      usb_msg.read.databuf[0x33 + 4*i ] = pData2[0x00 + 4*i ];
+ 731   2              }
+ 732   1              usb_msg.read.datalength = 0x20;
+ 733   1              return sCMDSuccess;
+ 734   1      }
+ 735          
+ 736          
+ 737          //-----------------------------------------------------------------------------
+ 738          // Func_CMD_Set_AD7298_Coeff
+ 739          //-----------------------------------------------------------------------------
+ 740          //
+ 741          // Return Value:  None
+ 742          // Parameters:    None
+ 743          //
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 13  
+
+ 744          // Set AD7298 Coeff
+ 745          //
+ 746          //-----------------------------------------------------------------------------
+ 747          uint8_t Func_CMD_Set_AD7298_Coeff (void)
+ 748          {
+ 749   1              int i;
+ 750   1              int lane;
+ 751   1              uint8_t *pData1;
+ 752   1              uint8_t *pData2;
+ 753   1              lane = usb_msg.write.databuf[0];
+ 754   1              pData1 = (uint8_t*)(&(MCUPer.Rssi_Meas[lane]));
+ 755   1              pData2 = (uint8_t*)(&(MCUPer.Rssi_Real[lane]));
+ 756   1              for( i = 0; i < 12; i++ )
+ 757   1              {
+ 758   2                      pData1[0x00 + 4*i ] = usb_msg.write.databuf[0x01 + 4*i ];
+ 759   2                      pData1[0x01 + 4*i ] = usb_msg.write.databuf[0x02 + 4*i ];
+ 760   2                      pData1[0x02 + 4*i ] = usb_msg.write.databuf[0x03 + 4*i ];
+ 761   2                      pData1[0x03 + 4*i ] = usb_msg.write.databuf[0x04 + 4*i ];
+ 762   2      
+ 763   2      
+ 764   2                      pData2[0x00 + 4*i ] = usb_msg.write.databuf[0x31 + 4*i ];
+ 765   2                      pData2[0x01 + 4*i ] = usb_msg.write.databuf[0x32 + 4*i ];
+ 766   2                      pData2[0x02 + 4*i ] = usb_msg.write.databuf[0x33 + 4*i ];
+ 767   2                      pData2[0x03 + 4*i ] = usb_msg.write.databuf[0x34 + 4*i ];
+ 768   2              }
+ 769   1      
+ 770   1              gFlagWriteFlash = 1;
+ 771   1              return sCMDSuccess;
+ 772   1      }
+ 773          
+ 774          //-----------------------------------------------------------------------------
+ 775          // Func_CMD_Get_Power
+ 776          //-----------------------------------------------------------------------------
+ 777          //
+ 778          // Return Value:  None
+ 779          // Parameters:    None
+ 780          //
+ 781          // Get Power
+ 782          //
+ 783          //-----------------------------------------------------------------------------
+ 784          uint8_t Func_CMD_Get_Power (void)
+ 785          {
+ 786   1              int i;
+ 787   1              int lane;
+ 788   1              uint8_t *pData;
+ 789   1              lane = usb_msg.write.databuf[0];
+ 790   1              pData = (uint8_t*)(&(MCUPer.fVAPD_RL[lane]));
+ 791   1              for( i = 0; i < 0x04; i++ )
+ 792   1              {
+ 793   2                      usb_msg.read.databuf[i] = pData[i];
+ 794   2              }
+ 795   1              usb_msg.read.datalength = 0x04;
+ 796   1              return sCMDSuccess;
+ 797   1      }
+ 798          
+ 799          
+ 800          //-----------------------------------------------------------------------------
+ 801          // Func_CMD_Set_Power
+ 802          //-----------------------------------------------------------------------------
+ 803          //
+ 804          // Return Value:  None
+ 805          // Parameters:    None
+ 806          //
+C51 COMPILER V9.60.0.0   COMMAND_ITEM                                                      08/26/2020 18:25:44 PAGE 14  
+
+ 807          // Set Power
+ 808          //
+ 809          //-----------------------------------------------------------------------------
+ 810          uint8_t Func_CMD_Set_Power (void)
+ 811          {
+ 812   1              int i;
+ 813   1              int lane;
+ 814   1              uint8_t *pData;
+ 815   1              lane = usb_msg.write.databuf[0];
+ 816   1              pData = (uint8_t*)(&(MCUPer.fVAPD_RL[lane]));
+ 817   1              for( i = 0; i < 4; i++ )
+ 818   1              {
+ 819   2                      pData[i] = usb_msg.write.databuf[i + 1];
+ 820   2              }
+ 821   1      
+ 822   1              gFlagWriteFlash = 1;
+ 823   1              return sCMDSuccess;
+ 824   1      }
+ 825          
+ 826          
+ 827          
+ 828          
+ 829          
+ 830          
+ 831          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   2639    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   1400    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      69
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

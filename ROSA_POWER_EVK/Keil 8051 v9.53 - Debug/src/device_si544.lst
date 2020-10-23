@@ -1,0 +1,122 @@
+C51 COMPILER V9.53.0.0   DEVICE_SI544                                                      05/19/2020 09:45:40 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE DEVICE_SI544
+OBJECT MODULE PLACED IN .\src\device_si544.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\rosa_cdr
+                    -_evk\software\C8051\2020.05.19_c8051\ROSA_EVK_WITH_CDR\src\device_si544.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNI
+                    -NGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/develo
+                    -per/sdks/8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C80
+                    -51F340/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_U
+                    -SBXpress_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\device_si544
+                    -.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\device_si544.OBJ)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //--------------------------------------------------------------------------
+   4          //
+   5          // file name  :       device_si544.c
+   6          //
+   7          // description:       SI544 Driver
+   8          //
+   9          // Target     :
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2019/09/03 by wm
+  13          //
+  14          //--------------------------------------------------------------------------
+  15          
+  16          #include "include.h"
+  17          SI_SEGMENT_VARIABLE( si544_freq, float, SI_SEG_XDATA );
+  18          SI_SEGMENT_VARIABLE( temp, double, SI_SEG_XDATA );
+  19          SI_SEGMENT_VARIABLE( freq, double, SI_SEG_XDATA );
+  20          
+  21          SI_SEGMENT_VARIABLE( hsdiv, uint16_t, SI_SEG_XDATA );
+  22          SI_SEGMENT_VARIABLE( fbdiv, uint32_t, SI_SEG_XDATA );
+  23          //-----------------------------------------------------------------------------
+  24          //SI544_Config
+  25          //-----------------------------------------------------------------------------
+  26          //
+  27          // Return Value:  None
+  28          // Parameters:    channel,data
+  29          //
+  30          // Configures     set SI544 value
+  31          //
+  32          //-----------------------------------------------------------------------------
+  33          uint8_t SI544_Config (float si544_freq)
+  34          {
+  35   1              int i;
+  36   1      
+  37   1              //double temp;
+  38   1              //double freq;
+  39   1              //uint16_t hsdiv;
+  40   1              //uint32_t fbdiv;
+  41   1              uint8_t error;
+  42   1              //-----------------------0----1----2----3----4----5----6----7-----8---9----10---11---12
+  43   1              uint8_t reg_addr[13] = {0xff,0x45,0x11,0x17,0x18,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,0x07,0x11};
+  44   1              uint8_t reg_data[13] = {0x00,0x00,0x00,0x11,0x00,0x7a,0xb0,0xad,0x09,0xc7,0x00,0x08,0x01};
+  45   1      
+  46   1      
+  47   1              freq = si544_freq;
+  48   1      
+  49   1              temp = 10800. / freq + 1.;
+  50   1              hsdiv = (uint16_t)temp;
+C51 COMPILER V9.53.0.0   DEVICE_SI544                                                      05/19/2020 09:45:40 PAGE 2   
+
+  51   1      
+  52   1              temp = freq * hsdiv;
+  53   1              fbdiv = (uint32_t)(temp / 55.05 * 4294967296.);
+  54   1      
+  55   1              reg_data[3] = hsdiv & 0x00ff;
+  56   1              reg_data[4] = (hsdiv >> 8) & 0x00ff;
+  57   1      
+  58   1              reg_data[5] = fbdiv & 0x000000ff;
+  59   1              reg_data[6] = (fbdiv >> 8) & 0x000000ff;
+  60   1              reg_data[7] = (fbdiv >> 16) & 0x000000ff;
+  61   1              reg_data[8] = (fbdiv >> 24) & 0x000000ff;
+  62   1      
+  63   1              for(i = 0;i < 13;i++){
+  64   2                      error = I2C_Master_writeBytes( SI544_SLAVE_ADDR, reg_addr[i], 0x01, reg_data + i );
+  65   2                      if(error)
+  66   2                      {
+  67   3                              return error;
+  68   3                      }
+  69   2              }
+  70   1              return error;
+  71   1      }
+  72          
+  73          //-----------------------------------------------------------------------------
+  74          //SI544_Read
+  75          //-----------------------------------------------------------------------------
+  76          //
+  77          // Return Value:  None
+  78          // Parameters:    data
+  79          //
+  80          // Configures     SI544 value
+  81          //
+  82          //-----------------------------------------------------------------------------
+  83          void SI544_Read (uint8_t *Data)
+  84          {
+  85   1              Data = (uint8_t*)(&(si544_freq));
+  86   1              return;
+  87   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    361    ----
+   CONSTANT SIZE    =     26    ----
+   XDATA SIZE       =     18    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      36
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

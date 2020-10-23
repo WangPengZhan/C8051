@@ -1,0 +1,158 @@
+C51 COMPILER V9.53.0.0   ADC_0                                                             08/06/2020 18:09:10 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE ADC_0
+OBJECT MODULE PLACED IN .\src\adc_0.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\adc_0.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2) F
+                    -LOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/805
+                    -1/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F340/inc;C
+                    -:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpress_Ech
+                    -o/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\adc_0.lst) COND PAGEWIDT
+                    -H(120) PAGELENGTH(65) OBJECT(.\src\adc_0.OBJ)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //--------------------------------------------------------------------------
+   4          //
+   5          // file name  :       adc_0.c
+   6          //
+   7          // description:       Initialize and use ADC0
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 BY roy zhou
+  13          //
+  14          //--------------------------------------------------------------------------
+  15          
+  16          #include "include.h"
+  17          
+  18          SI_SEGMENT_VARIABLE(MCUPer, extern struct MCU_Config_Parameters_struct,  SI_SEG_XDATA);
+  19          
+  20          //-----------------------------------------------------------------------------
+  21          // ADC0_Init
+  22          //-----------------------------------------------------------------------------
+  23          //
+  24          // Return Value:  None
+  25          // Parameters:    None
+  26          //
+  27          // Configures:    Initialize ADC0
+  28          //
+  29          //-----------------------------------------------------------------------------
+  30          void ADC0_Init (void)
+  31          {
+  32   1         ADC0CN = 0x00;                      // ADC0 disabled, normal tracking,
+  33   1                                             // conversion triggered is write of 1 to AD0BUSY
+  34   1         if( MCUPer.ADC_Mode == 0 )
+  35   1         {
+  36   2                 REF0CN = 0x07;                    // Enable on-chip VREF and buffer
+  37   2                                                                               // Internal Temperature Sensor on.
+  38   2         }
+  39   1         else
+  40   1         {
+  41   2                 REF0CN = 0x0E;                                  // VDD used as voltage reference
+  42   2                                                 // Internal Temperature Sensor on.
+  43   2         }
+  44   1      
+  45   1         ADC0CF = ((SYSCLK/SARCLK)-1)<<3;    // set SAR clock to 3MHz
+  46   1      
+  47   1         ADC0CF &= 0xF8;                     // right-justify results
+  48   1      
+  49   1         ADC0CN_ADEN = 1;                    // enable ADC0
+  50   1      }
+C51 COMPILER V9.53.0.0   ADC_0                                                             08/06/2020 18:09:10 PAGE 2   
+
+  51          // ADC0_Read
+  52          //-----------------------------------------------------------------------------
+  53          //
+  54          // Return Value:  ADC DIGITAL
+  55          // Parameters:    count,input
+  56          //
+  57          // Configures:    ADC0_Read
+  58          //
+  59          //-----------------------------------------------------------------------------
+  60          uint16_t ADC0_Read( int count, ADC0_PositiveInput_e input )
+  61          {
+  62   1              uint16_t array[6];
+  63   1              uint16_t result;
+  64   1              uint16_t temp;
+  65   1              uint8_t  i;
+  66   1              uint8_t  j;
+  67   1      
+  68   1              if((count>12)||(count<3))
+  69   1              {
+  70   2                      return 0;
+  71   2              }
+  72   1      
+  73   1              // select input
+  74   1              AMX0P = input;  // ADC0 positive input = input
+  75   1              AMX0N = 0x1F;   // ADC0 negative input = GND
+  76   1      
+  77   1              delay_us_timer1(300);
+  78   1      
+  79   1              for( i = 0; i < 6; i++ )
+  80   1              {
+  81   2                      delay_us_timer1(10);
+  82   2      
+  83   2                      // Clear ADC0 conv. complete flag
+  84   2                      ADC0CN_ADINT = 0;
+  85   2      
+  86   2                      // Start a conversion by setting ADBUSY
+  87   2                      ADC0CN_ADBUSY = 1;
+  88   2      
+  89   2                      // Wait for conversion to complete
+  90   2                      while( !ADC0CN_ADINT ){;}
+  91   2      
+  92   2                      // Get the result
+  93   2                      array[i] = ADC0;
+  94   2              }
+  95   1      
+  96   1              // bubble sort
+  97   1              for( i = 0; i < (6-1); i++ )
+  98   1              {
+  99   2                      for( j = 0; j < (6-i-1); j++ )
+ 100   2                      {
+ 101   3                              if(array[j]<array[j+1],j++)
+ 102   3                              {
+ 103   4                                      temp      =  array[j];
+ 104   4                                      array[j]  =  array[j+1];
+ 105   4                                      array[j+1] = temp;
+ 106   4                              }
+ 107   3                      }
+ 108   2              }
+ 109   1      
+ 110   1              result = 0;
+ 111   1              for( i = 1; i < (6-1); i++ )
+ 112   1              {
+ 113   2                      result += array[i];
+C51 COMPILER V9.53.0.0   ADC_0                                                             08/06/2020 18:09:10 PAGE 3   
+
+ 114   2              }
+ 115   1      
+ 116   1              result /= (6-2);
+ 117   1      
+ 118   1              return (result);
+ 119   1      }
+ 120          
+ 121          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    227    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      13
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

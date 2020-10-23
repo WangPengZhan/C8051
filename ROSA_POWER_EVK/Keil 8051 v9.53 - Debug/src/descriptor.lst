@@ -1,0 +1,76 @@
+C51 COMPILER V9.53.0.0   DESCRIPTOR                                                        08/06/2020 18:09:12 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE DESCRIPTOR
+OBJECT MODULE PLACED IN .\src\descriptor.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\descriptor.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL
+                    -(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/sdk
+                    -s/8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F340/
+                    -inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpres
+                    -s_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\descriptor.lst) CON
+                    -D PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\descriptor.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       descriptor.c
+   6          //
+   7          // description:       Descriptor information to pass to USB
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          
+  16          #include "include.h"
+  17          
+  18          
+  19          //--- [BEGIN] USB Descriptor Information [BEGIN] ---/
+  20          
+  21          #define MFR_STRING          "Silicon Labs"        /// Manufacturer String
+  22          #define PROD_STRING         "ROSA_EVK_WITH_CDR"   /// Product String
+  23          #define SERIAL_STRING       "0009"                /// Serial String
+  24          
+  25          USBX_STRING_DESC(USB_MfrStr[], MFR_STRING);
+  26          USBX_STRING_DESC(USB_ProductStr[], PROD_STRING);
+  27          USBX_STRING_DESC(USB_SerialStr[], SERIAL_STRING);
+  28          
+  29          
+  30          const USBX_Init_t initStruct =
+  31          {
+  32             0x0145, //0x10C4,       // Vendor ID
+  33             0x3009, //0xEA61,       // Product ID
+  34             USB_MfrStr,             // Pointer to Manufacturer String
+  35             USB_ProductStr,         // Pointer to Product String
+  36             USB_SerialStr,          // Pointer to Serial String
+  37             0x32,                     // Max Power / 2
+  38             0x80,                   // Power Attribute
+  39             0x0100,                 // Device Release # (BCD format)
+  40             false                   // Use USB FIFO space true
+  41          };
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =     45    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     18    ----
+   IDATA SIZE       =   ----    ----
+C51 COMPILER V9.53.0.0   DESCRIPTOR                                                        08/06/2020 18:09:12 PAGE 2   
+
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

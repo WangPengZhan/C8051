@@ -1,0 +1,35 @@
+C51 COMPILER V9.60.0.0   SPECS                                                             08/26/2020 14:49:40 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE SPECS
+OBJECT MODULE PLACED IN .\.metadata\.plugins\org.eclipse.cdt.make.core\specs.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.60\BIN\C51.exe D:\workfile\ROSA
+                    -_EVK_V2\software\F00016_ROSA_POWE_EVK_V2\C8051\2020.08.06_c8051\ROSA_POWER_EVK\.metadata\.plugins\org.eclipse.cdt.make.c
+                    -ore\specs.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) I
+                    -NTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.7//Device/shared/si8051Base;C:/SiliconLabs/
+                    -SimplicityStudio/v4/developer/sdks/8051/v4.1.7//Device/C8051F340/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8
+                    -051/v4.1.7//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpress_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer
+                    -/sdks/8051/v4.1.7//Lib/USBXpress) PRINT(.\.metadata\.plugins\org.eclipse.cdt.make.core\specs.lst) COND PAGEWIDTH(120) PA
+                    -GELENGTH(65) OBJECT(.\.metadata\.plugins\org.eclipse.cdt.make.core\specs.OBJ)
+
+line level    source
+
+   1          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

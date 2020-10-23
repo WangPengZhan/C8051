@@ -1,0 +1,181 @@
+C51 COMPILER V9.53.0.0   FLASHPRIMITIVES                                                   08/06/2020 18:09:15 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE FLASHPRIMITIVES
+OBJECT MODULE PLACED IN .\src\flashPrimitives.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\flashPrimitives.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNING
+                    -LEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/develope
+                    -r/sdks/8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051
+                    -F340/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USB
+                    -Xpress_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\flashPrimitive
+                    -s.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\flashPrimitives.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       flashPrimitives.c
+   6          //
+   7          // description:       Contains several useful utilities for writing and updating
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          
+  16          //-----------------------------------------------------------------------------
+  17          // Includes
+  18          //-----------------------------------------------------------------------------
+  19          #include "include.h"
+  20          
+  21          //-----------------------------------------------------------------------------
+  22          // Function Prototypes
+  23          //-----------------------------------------------------------------------------
+  24          
+  25          
+  26          //-----------------------------------------------------------------------------
+  27          // FLASH_ByteWrite
+  28          //-----------------------------------------------------------------------------
+  29          //
+  30          // Return Value : None
+  31          // Parameters   :
+  32          //   1) FLADDR addr - address of the byte to write to
+  33          //                    valid range is from 0x0000 to 0x7DFE for 32K devices
+  34          //                    valid range is from 0x0000 to 0x3FFE for 16K devices
+  35          //   2) char byte - byte to write to Flash.
+  36          //
+  37          // This routine writes <byte> to the linear FLASH address <addr>.
+  38          //-----------------------------------------------------------------------------
+  39          void FLASH_ByteWrite (FLADDR addr, char byte)
+  40          {
+  41   1         bit EA_SAVE = IE_EA;                // Preserve EA
+  42   1         char xdata * data pwrite;           // FLASH write pointer
+  43   1      
+  44   1         IE_EA = 0;                          // Disable interrupts
+  45   1      
+  46   1         VDM0CN = 0xA0;                      // Enable VDD monitor and high threshold
+  47   1      
+  48   1         RSTSRC = 0x02;                      // Enable VDD monitor as a reset source
+  49   1      
+  50   1         pwrite = (char xdata *) addr;
+C51 COMPILER V9.53.0.0   FLASHPRIMITIVES                                                   08/06/2020 18:09:15 PAGE 2   
+
+  51   1      
+  52   1         FLKEY  = 0xA5;                      // Key Sequence 1
+  53   1         FLKEY  = 0xF1;                      // Key Sequence 2
+  54   1         PSCTL |= 0x01;                      // PSWE = 1 which enables writes
+  55   1      
+  56   1         VDM0CN = 0xA0;                      // Enable VDD monitor and high threshold
+  57   1      
+  58   1         RSTSRC = 0x02;                      // Enable VDD monitor as a reset source
+  59   1      
+  60   1         *pwrite = byte;                     // Write the byte
+  61   1      
+  62   1         PSCTL &= ~0x01;                     // PSWE = 0 which disable writes
+  63   1      
+  64   1         IE_EA = EA_SAVE;                    // Restore interrupts
+  65   1      }
+  66          
+  67          
+  68          //-----------------------------------------------------------------------------
+  69          // FLASH_ByteRead
+  70          //-----------------------------------------------------------------------------
+  71          //
+  72          // Return Value :
+  73          //      unsigned char - byte read from Flash
+  74          // Parameters   :
+  75          //   1) FLADDR addr - address of the byte to read to
+  76          //                    valid range is from 0x0000 to 0x7DFE for 32K devices
+  77          //                    valid range is from 0x0000 to 0x3FFE for 16K devices
+  78          //
+  79          // This routine reads a <byte> from the linear FLASH address <addr>.
+  80          //-----------------------------------------------------------------------------
+  81          uint8_t FLASH_ByteRead (FLADDR addr)
+  82          {
+  83   1         bit EA_SAVE = IE_EA;                // Preserve EA
+  84   1         char code * data pread;             // FLASH read pointer
+  85   1         uint8_t     byte;
+  86   1      
+  87   1         IE_EA = 0;                          // Disable interrupts
+  88   1      
+  89   1         pread = (char code *) addr;
+  90   1      
+  91   1         byte = *pread;                      // Read the byte
+  92   1      
+  93   1         IE_EA = EA_SAVE;                    // Restore interrupts
+  94   1      
+  95   1         return byte;
+  96   1      }
+  97          
+  98          
+  99          //-----------------------------------------------------------------------------
+ 100          // FLASH_PageErase
+ 101          //-----------------------------------------------------------------------------
+ 102          //
+ 103          // Return Value : None
+ 104          // Parameters   :
+ 105          //   1) FLADDR addr - address of any byte in the page to erase
+ 106          //                    valid range is from 0x0000 to 0x7BFF for 32K devices
+ 107          //                    valid range is from 0x0000 to 0x3DFF for 16K devices
+ 108          //
+ 109          // This routine erases the FLASH page containing the linear FLASH address
+ 110          // <addr>.  Note that the page of Flash containing the Lock Byte cannot be
+ 111          // erased if the Lock Byte is set.
+ 112          //
+ 113          //-----------------------------------------------------------------------------
+C51 COMPILER V9.53.0.0   FLASHPRIMITIVES                                                   08/06/2020 18:09:15 PAGE 3   
+
+ 114          void FLASH_PageErase (FLADDR addr)
+ 115          {
+ 116   1         bit EA_SAVE = IE_EA;                // Preserve EA
+ 117   1         char xdata * data pwrite;           // FLASH write pointer
+ 118   1      
+ 119   1         IE_EA = 0;                          // Disable interrupts
+ 120   1      
+ 121   1         VDM0CN = 0x80;                      // Enable VDD monitor
+ 122   1      
+ 123   1         RSTSRC = 0x02;                      // Enable VDD monitor as a reset source
+ 124   1      
+ 125   1         pwrite = (char xdata *) addr;
+ 126   1      
+ 127   1         FLKEY  = 0xA5;                      // Key Sequence 1
+ 128   1         FLKEY  = 0xF1;                      // Key Sequence 2
+ 129   1         PSCTL |= 0x03;                      // PSWE = 1; PSEE = 1
+ 130   1      
+ 131   1      
+ 132   1         VDM0CN = 0x80;                      // Enable VDD monitor
+ 133   1      
+ 134   1         RSTSRC = 0x02;                      // Enable VDD monitor as a reset source
+ 135   1         *pwrite = 0;                        // Initiate page erase
+ 136   1      
+ 137   1         PSCTL &= ~0x03;                     // PSWE = 0; PSEE = 0
+ 138   1      
+ 139   1         IE_EA = EA_SAVE;                    // Restore interrupts
+ 140   1      }
+ 141          
+ 142          //-----------------------------------------------------------------------------
+ 143          // End Of File
+ 144          //-----------------------------------------------------------------------------
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    100    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       3
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

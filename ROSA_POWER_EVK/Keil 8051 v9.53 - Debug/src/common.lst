@@ -1,0 +1,88 @@
+C51 COMPILER V9.53.0.0   COMMON                                                            08/06/2020 18:09:12 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE COMMON
+OBJECT MODULE PLACED IN .\src\common.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\common.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2) 
+                    -FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/80
+                    -51/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F340/inc;
+                    -C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpress_Ec
+                    -ho/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\common.lst) COND PAGEWI
+                    -DTH(120) PAGELENGTH(65) OBJECT(.\src\common.OBJ)
+
+line level    source
+
+   1          /*
+   2           * FILE                : common.c
+   3           * DESCRIPTION         : --
+   4           * Author              : ysung
+   5           * Copyright           : 2018-2019, xy-technology International Co.,Ltd
+   6           *
+   7           * History
+   8           * --------------------
+   9           * Rev                 : 0.00
+  10           * Date                : 09/25/2019
+  11           *
+  12           * create.
+  13           * --------------------
+  14           */
+  15          
+  16          //------------------------ Include files ------------------------//
+  17          #include    "include.h"
+  18          
+  19          //--------------------- Function Prototype ----------------------//
+  20          void sort( uint16_t *buffer,int num );
+  21          
+  22          //-------------------------- Variable ---------------------------//
+  23          
+  24          //--------------------------- Function --------------------------//
+  25          /*
+  26           * Name                : sort
+  27           * Description         : ---
+  28           * Author              : ysung
+  29           *
+  30           * History
+  31           * --------------------
+  32           * Rev                 : 0.00
+  33           * Date                : 09/25/2019
+  34           * 
+  35           * create.
+  36           * --------------------
+  37           */
+  38          void sort(uint16_t *buffer,int num)
+  39          {
+  40   1              int i,j;
+  41   1              int temp;
+  42   1              
+  43   1              for(i = 0;i < (num - 1);++i){
+  44   2                      for(j = 0;j < (num - 1 - i);++j){
+  45   3                              if(buffer[j] < buffer[j + 1]){
+  46   4                                      temp = buffer[j];
+  47   4                                      buffer[j] = buffer[j + 1];
+  48   4                                      buffer[j + 1] = temp;
+  49   4                              }
+  50   3                      }
+C51 COMPILER V9.53.0.0   COMMON                                                            08/06/2020 18:09:12 PAGE 2   
+
+  51   2              }
+  52   1              return;
+  53   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    230    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       8
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

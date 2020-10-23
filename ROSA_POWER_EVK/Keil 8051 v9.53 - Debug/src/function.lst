@@ -1,0 +1,259 @@
+C51 COMPILER V9.53.0.0   FUNCTION                                                          08/06/2020 18:09:16 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE FUNCTION
+OBJECT MODULE PLACED IN .\src\function.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\function.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL(2
+                    -) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/
+                    -8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F340/in
+                    -c;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpress_
+                    -Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\function.lst) COND PA
+                    -GEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\function.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       function.c
+   6          //
+   7          // description:       Contains Normal function
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          
+  16          #include "include.h"
+  17          
+  18          SI_SEGMENT_VARIABLE(gFlagWriteFlash, uint8_t, SI_SEG_XDATA);
+  19          SI_SEGMENT_VARIABLE(fADC_bits, float, SI_SEG_XDATA);
+  20          SI_SEGMENT_VARIABLE(MCUPer, struct MCU_Config_Parameters_struct, SI_SEG_XDATA);
+  21          SI_LOCATED_VARIABLE_NO_INIT(gID_Flash[FLASH_USE_SIZE], uint8_t, SI_SEG_CODE, FLASH_USE_ADDRESS );
+  22          SI_SEGMENT_VARIABLE(Port_Monitor, uint8_t, SI_SEG_XDATA);
+  23          SI_SEGMENT_VARIABLE(pin, uint16_t, SI_SEG_XDATA);
+  24          void(*funccallback)(void);
+  25          //-----------------------------------------------------------------------------
+  26          // Port_Init
+  27          //-----------------------------------------------------------------------------
+  28          //
+  29          // Return Value:  None
+  30          // Parameters:    None
+  31          //
+  32          // Configures Init Pin
+  33          //
+  34          //-----------------------------------------------------------------------------
+  35          void    Port_Init(void)
+  36          {
+  37   1              // IO    -  Skip,                   Port,       MDOUT,             MDIN                   USE
+  38   1      
+  39   1              // P0.0  -  Skipped,        0           Open-Drain,        Digital        none
+  40   1              // P0.1  -  Skipped,        1           push-pull,             Digital        EN1V8
+  41   1              // P0.2  -  Skipped,        1           push-pull,         Digital        EN5V
+  42   1              // P0.3  -  Skipped,        0           push-pull,         Digital        EN-3V
+  43   1              // P0.4  -  Skipped,        0           Open-Drain,        Analog         VCC3V3M_MON
+  44   1              // P0.5  -  Skipped,        1           push-pull,         Digital        EN3V3
+  45   1              // P0.6  -  Skipped,        0           Open-Drain,        Digital        none
+  46   1              // P0.7  -  Skipped,        0           Open-Drain,        Digital        none
+  47   1              P0      = 0x26;
+  48   1              P0MDIN  = 0xEF;
+  49   1              P0MDOUT = 0x2E;
+  50   1              P0SKIP  = 0xFF;
+C51 COMPILER V9.53.0.0   FUNCTION                                                          08/06/2020 18:09:16 PAGE 2   
+
+  51   1      
+  52   1              // P1.0  -  Skipped,        0           Open-Drain,        Digital        none
+  53   1              // P1.1  -  Skipped,            0               Open-Drain,        Digital        none
+  54   1              // P1.2  -  Skipped,            0               Open-Drain,        Digital        none
+  55   1              // P1.3  -  Skipped,        1           Open-Drain,        Digital        APD_ALARM0
+  56   1              // P1.4  -  Skipped,        1           Open-Drain,        Digital        APD_ALARM1
+  57   1              // P1.5  -  Skipped,        0           Open-Drain,        Digital        none
+  58   1              // P1.6  -  Skipped,        1           Open-Drain,        Digital        APD_ALARM3
+  59   1              // P1.7  -  Skipped,        1           Open-Drain,        Digital        APD_ALARM2
+  60   1              P1      = 0xD8;
+  61   1          P1MDIN  = 0xFF;
+  62   1              P1MDOUT = 0x00;
+  63   1              P1SKIP  = 0xFF;
+  64   1      
+  65   1              // P2.0  -  Skipped,        1           Open-Drain,        Digital        RX_LOS
+  66   1              // P2.1  -  Skipped,        0           push-pull,             Digital        RX_DIS
+  67   1              // P2.2  -  Skipped,        1           push-pull,         Digital         PWRDN
+  68   1              // P2.3  -  Skipped,        1           Open-Drain,        Digital       SLOW
+  69   1              // P2.4  -  Skipped,        1           push-pull,         Digital        SPI_SCK
+  70   1              // P2.5  -  Skipped,        1           push-pull,         Digital        SPI_MISO
+  71   1              // P2.6  -  Skipped,        1           push-pull,         Digital        CS0
+  72   1              // P2.7  -  Skipped,        1           push-pull,         Digital        MOSI
+  73   1              P2      = 0xFD;
+  74   1              P2MDIN  = 0xFF;
+  75   1              P2MDOUT = 0xD6;
+  76   1              P2SKIP  = 0xFF;
+  77   1      
+  78   1              // P3.0  -  Skipped,        1           push-pull,             Digital        OE
+  79   1              // P3.1  -  Skipped,        0           Open-Drain,        Digital        none
+  80   1              // P3.2  -  Skipped,        1           Open-Drain,        Digital        I2C_SDA
+  81   1              // P3.3  -  Skipped,        1           Open-Drain,        Digital        I2C_SCL
+  82   1              // P3.4  -  Skipped,        1           Push-pull,         Digital        HV_EN
+  83   1              // P3.5  -  Skipped,        0           Open-Drain,        Digital        none
+  84   1              // P3.6  -  Skipped,        0           Open-Drain,        Digital        none
+  85   1              // P3.7  -  Skipped,        1           push-pull,         Digital        BWC
+  86   1              P3      = 0x9D;
+  87   1              P3MDIN  = 0xFF;
+  88   1              P3MDOUT = 0x91;
+  89   1              P3SKIP  = 0xFF;
+  90   1      
+  91   1              // P4.0  -  Skipped,        1           push-pull,             Digital        Vdiver
+  92   1              // P4.1  -  Skipped,        1           push-pull,             Digital        Tsense_BUSY
+  93   1              // P4.2  -  Skipped,        1           Open-Drain,        Digital        PD/EST
+  94   1              // P4.3  -  none,               0               Open-Drain,        Digital        none
+  95   1              // P4.4  -  none,               0               Open-Drain,        Digital        none
+  96   1              // P4.5  -  none,               0               Open-Drain,        Digital        none
+  97   1              // P4.6  -  none,               0               Open-Drain,        Digital        none
+  98   1              // P4.7  -  none,               0               Open-Drain,        Digital        none
+  99   1              P4      = 0x07;
+ 100   1              P4MDIN  = 0xFF;
+ 101   1              P4MDOUT = 0x03;
+ 102   1      
+ 103   1              XBR0 = 0x02;
+ 104   1              XBR1 = XBR1_XBARE__ENABLED;  // Enable the crossbar
+ 105   1              XBR2 = 0x00;
+ 106   1      }
+ 107          
+ 108          
+ 109          //-----------------------------------------------------------------------------
+ 110          // LoadFlash_File
+ 111          //-----------------------------------------------------------------------------
+ 112          //
+ 113          // Return Value:  None
+C51 COMPILER V9.53.0.0   FUNCTION                                                          08/06/2020 18:09:16 PAGE 3   
+
+ 114          // Parameters:    None
+ 115          //
+ 116          // Configures     None
+ 117          //
+ 118          //-----------------------------------------------------------------------------
+ 119          void    LoadFlash_File(void)
+ 120          {
+ 121   1              int i = 0;
+ 122   1      
+ 123   1              FLASH_Read( (uint8_t SI_SEG_XDATA *)&MCUPer, FLASH_USE_ADDRESS, FLASH_USE_SIZE );
+ 124   1      
+ 125   1              if( (MCUPer.fADC_Vref < 1.0) || (MCUPer.fADC_Vref>4.0) || (MCUPer.ADC_Bits>16) )
+ 126   1              {
+ 127   2                      MCUPer.fDC_VCC   = 3.3;  // v
+ 128   2                      MCUPer.fADC_Vref = 3.3;  // v
+ 129   2      
+ 130   2                      for( i = 0; i < 4; i++ )
+ 131   2                      {
+ 132   3                              MCUPer.fRSSI_SR[i]     = 1.0; // K
+ 133   3                              MCUPer.fRSSI_Offset[i] = 0;   // uA
+ 134   3                              MCUPer.fVAPD_RH[i]     = 150; // K
+ 135   3                              MCUPer.fVAPD_RL[i]     = 10;  // k
+ 136   3                              MCUPer.fVAPD_Offset[i] = 0;   // uA
+ 137   3                      }
+ 138   2      
+ 139   2                      MCUPer.fICCI_R = 1.15; // ohm
+ 140   2                      MCUPer.fICCO_R = 1.15; // ohm
+ 141   2      
+ 142   2                      MCUPer.ADC_Bits  = 10;   // Bits
+ 143   2                      MCUPer.ADC_Mode  = 1;    // Vref = VDD
+ 144   2      
+ 145   2                      FLASH_Update ( FLASH_USE_ADDRESS, (uint8_t SI_SEG_XDATA*)&MCUPer, FLASH_USE_SIZE );
+ 146   2              }
+ 147   1      
+ 148   1              fADC_bits = (float)(pow( 2, MCUPer.ADC_Bits))-1;
+ 149   1      
+ 150   1              gFlagWriteFlash = 0;
+ 151   1      }
+ 152          
+ 153          
+ 154          //-----------------------------------------------------------------------------
+ 155          // Global_Value_Init
+ 156          //-----------------------------------------------------------------------------
+ 157          //
+ 158          // Return Value:  None
+ 159          // Parameters:    None
+ 160          //
+ 161          // Configures     Initialize Global Value
+ 162          //
+ 163          //-----------------------------------------------------------------------------
+ 164          void    Global_Value_Init(void)
+ 165          {
+ 166   1              Port_Monitor = 0x01; // enable auto monitor
+ 167   1              funccallback = NULL;
+ 168   1      }
+ 169          
+ 170          
+ 171          //-----------------------------------------------------------------------------
+ 172          // WriteFlash_File
+ 173          //-----------------------------------------------------------------------------
+ 174          //
+ 175          // Return Value:  None
+ 176          // Parameters:    None
+C51 COMPILER V9.53.0.0   FUNCTION                                                          08/06/2020 18:09:16 PAGE 4   
+
+ 177          //
+ 178          // Configures     None
+ 179          //
+ 180          //-----------------------------------------------------------------------------
+ 181          void    WriteFlash_File(void)
+ 182          {
+ 183   1              if( gFlagWriteFlash == 1 )
+ 184   1              {
+ 185   2                      IE_EA = 0; // Enable global interrupts
+ 186   2                      FLASH_Update ( FLASH_USE_ADDRESS, (uint8_t SI_SEG_XDATA*)&MCUPer, FLASH_USE_SIZE );
+ 187   2                      IE_EA = 1; // Enable global interrupts
+ 188   2      
+ 189   2                      gFlagWriteFlash = 0;
+ 190   2              }
+ 191   1      }
+ 192          
+ 193          //-----------------------------------------------------------------------------
+ 194          //-----------------------------------------------------------------------------
+ 195          // Port_Monitor_Ctrl
+ 196          //-----------------------------------------------------------------------------
+ 197          //
+ 198          // Return Value:  None
+ 199          // Parameters:    None
+ 200          //
+ 201          // Configures     Port monitor and control
+ 202          //
+ 203          //-----------------------------------------------------------------------------
+ 204          void    Port_Monitor_Ctrl (void)
+ 205          {
+ 206   1              uint16_t rada;
+ 207   1              rada = MCU_Register_Read(P0);
+ 208   1              rada = (rada >> 5) & 0x01;
+ 209   1              if(rada == 0x00){
+ 210   2                      pin =0x00;
+ 211   2              }else if((rada == 0x01)&&(pin == 0x00)){
+ 212   2                      // Set up internal REF register.
+ 213   2                      AD5629_Write( AD5629R_CMD_SET_INT_REF, AD5629R_ADDR_DAC_ALL, 0x0001 );
+ 214   2                      pin = 0x01;
+ 215   2              }else{
+ 216   2                      pin = 0x01;
+ 217   2              }
+ 218   1      
+ 219   1      }
+ 220          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    541    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    494    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      3       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

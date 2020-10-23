@@ -1,0 +1,142 @@
+C51 COMPILER V9.53.0.0   SPI_SIMULATE                                                      08/06/2020 18:09:18 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE SPI_SIMULATE
+OBJECT MODULE PLACED IN .\src\spi_simulate.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\spi_simulate.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEV
+                    -EL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/s
+                    -dks/8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F34
+                    -0/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpr
+                    -ess_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\spi_simulate.lst)
+                    - COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\spi_simulate.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       spi_simulate.c
+   6          //
+   7          // description:       spi_simulate driver
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2018/09/29 by ysung
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          #include "include.h"
+  16          
+  17          //-----------------------------------------------------------------------------
+  18          // spi_simulate init
+  19          //-----------------------------------------------------------------------------
+  20          //
+  21          // Return Value:  None
+  22          // Parameters:    None
+  23          //
+  24          // Configures
+  25          //
+  26          //-----------------------------------------------------------------------------
+  27          uint8_t spi_init(void)
+  28          {
+  29   1              /*SPI0CFG   = 0x40;
+  30   1              SPI0CN_NSSMD0 = 1;
+  31   1              SPI0CN_NSSMD1 = 1;
+  32   1              SPI0CN_SPIEN = 1;
+  33   1              SPI0CKR   = (SYSCLK/(2*F_SCK_MAX)) - 1;*/
+  34   1              SPI_SCK_ON();
+  35   1              SPI_CS0_ON();
+  36   1              SPI_MOSI_ON();
+  37   1      
+  38   1              return 0;
+  39   1      }
+  40          
+  41          //-----------------------------------------------------------------------------
+  42          // spi_send
+  43          //-----------------------------------------------------------------------------
+  44          //
+  45          // Return Value: receive data
+  46          // Parameters: send data
+  47          //
+  48          // Configures
+  49          //
+  50          //-----------------------------------------------------------------------------
+C51 COMPILER V9.53.0.0   SPI_SIMULATE                                                      08/06/2020 18:09:18 PAGE 2   
+
+  51          uint16_t spi_send(uint16_t buffer)
+  52          {
+  53   1              uint8_t i;
+  54   1              //uint8_t j;
+  55   1              uint16_t temp = 0x0000;
+  56   1      
+  57   1              SPI_SCK_OFF();
+  58   1              delay_us_timer1(1);
+  59   1      
+  60   1              for(i = 0;i < 16;i++){
+  61   2                      if(buffer & 0x8000){
+  62   3                              SPI_MOSI_ON();
+  63   3                      }else {
+  64   3                              SPI_MOSI_OFF();
+  65   3                      }
+  66   2      
+  67   2                      delay_us_timer1(1);
+  68   2                      buffer <<= 1;
+  69   2      
+  70   2                      SPI_SCK_ON();
+  71   2                      delay_us_timer1(2);
+  72   2      
+  73   2                      temp <<= 1;
+  74   2                      if(GET_MISO()){
+  75   3                              temp |= 0x0001;
+  76   3                      }else {
+  77   3                              temp |= 0x0000;
+  78   3                      }
+  79   2                      SPI_SCK_OFF();
+  80   2                      delay_us_timer1(2);
+  81   2              }
+  82   1      
+  83   1              return temp;
+  84   1      }
+  85          
+  86          //-----------------------------------------------------------------------------
+  87          // spi_write
+  88          //-----------------------------------------------------------------------------
+  89          //
+  90          // Return Value: none
+  91          // Parameters: send num,send data,receive data
+  92          //
+  93          // Configures
+  94          //
+  95          //-----------------------------------------------------------------------------
+  96          uint8_t spi_write(uint8_t num,uint16_t *buf)
+  97          {
+  98   1              uint8_t i;
+  99   1      
+ 100   1              for(i = 0;i < num;i++){
+ 101   2                      buf[i] = spi_send(buf[i]);
+ 102   2              }
+ 103   1      
+ 104   1              return 0;
+ 105   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    197    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      10
+C51 COMPILER V9.53.0.0   SPI_SIMULATE                                                      08/06/2020 18:09:18 PAGE 3   
+
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

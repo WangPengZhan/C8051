@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="com.silabs.ss.framework.ide.project.core.cdtMbsProjectType">
+		<item value="LINK" key="importOption"/>
+		<list key="fileLocationHistory">
+			<item value="D:\workfile\ROSA_EVK_V2\software\F00016_ROSA_POWE_EVK_V2\C8051\2020.08.06_c8051\ROSA_POWER_EVK"/>
+		</list>
+		<list key="fileLocations">
+			<item value="D:\workfile\ROSA_EVK_V2\software\F00016_ROSA_POWE_EVK_V2\C8051\2020.08.06_c8051\ROSA_POWER_EVK"/>
+		</list>
+	</section>
+</section>

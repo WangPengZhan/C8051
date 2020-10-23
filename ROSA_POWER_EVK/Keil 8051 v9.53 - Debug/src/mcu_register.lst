@@ -1,0 +1,137 @@
+C51 COMPILER V9.53.0.0   MCU_REGISTER                                                      08/06/2020 18:09:17 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE MCU_REGISTER
+OBJECT MODULE PLACED IN .\src\mcu_register.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\mcu_register.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEV
+                    -EL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/s
+                    -dks/8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F34
+                    -0/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpr
+                    -ess_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\mcu_register.lst)
+                    - COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\mcu_register.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       mcu_residter.c
+   6          //
+   7          // description:       mcu register read and set function
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          #include "include.h"
+  16          
+  17          
+  18          //-----------------------------------------------------------------------------
+  19          // MCU_Register_Write
+  20          //-----------------------------------------------------------------------------
+  21          //
+  22          // Return Value:  None
+  23          // Parameters:    regadr, val
+  24          //
+  25          // Configures     MCU register write
+  26          //
+  27          //-----------------------------------------------------------------------------
+  28          uint16_t MCU_Register_Write( uint16_t regadr, uint16_t val )
+  29          {
+  30   1         switch(regadr)
+  31   1         {
+  32   2                 case 0x80 : return (P0      = val);
+  33   2                 case 0xF1 : return (P0MDIN  = val);
+  34   2                 case 0xA4 : return (P0MDOUT = val);
+  35   2                 case 0xD4 : return (P0SKIP  = val);
+  36   2                 case 0x90 : return (P1      = val);
+  37   2                 case 0xF2 : return (P1MDIN  = val);
+  38   2                 case 0xA5 : return (P1MDOUT = val);
+  39   2                 case 0xD5 : return (P1SKIP  = val);
+  40   2                 case 0xA0 : return (P2      = val);
+  41   2                 case 0xF3 : return (P2MDIN  = val);
+  42   2                 case 0xA6 : return (P2MDOUT = val);
+  43   2                 case 0xD6 : return (P2SKIP  = val);
+  44   2                 case 0xB0 : return (P3      = val);
+  45   2                 case 0xF4 : return (P3MDIN  = val);
+  46   2                 case 0xA7 : return (P3MDOUT = val);
+  47   2                 case 0xDF : return (P3SKIP  = val);
+  48   2                 case 0xC7 : return (P4      = val);
+  49   2                 case 0xF5 : return (P4MDIN  = val);
+  50   2                 case 0xAE : return (P4MDOUT = val);
+C51 COMPILER V9.53.0.0   MCU_REGISTER                                                      08/06/2020 18:09:17 PAGE 2   
+
+  51   2      
+  52   2             default   : break;
+  53   2         }
+  54   1      
+  55   1         return 0xFFFF;
+  56   1      }
+  57          
+  58          
+  59          
+  60          
+  61          //-----------------------------------------------------------------------------
+  62          // MCU_Register_Read
+  63          //-----------------------------------------------------------------------------
+  64          //
+  65          // Return Value:  None
+  66          // Parameters:    regadr
+  67          //
+  68          // Configures     MCU register read
+  69          //
+  70          //-----------------------------------------------------------------------------
+  71          uint16_t MCU_Register_Read( uint16_t regadr )
+  72          {
+  73   1         switch(regadr)
+  74   1         {
+  75   2                 case 0x80 : return P0;
+  76   2                 case 0xF1 : return P0MDIN;
+  77   2                 case 0xA4 : return P0MDOUT;
+  78   2                 case 0xD4 : return P0SKIP;
+  79   2                 case 0x90 : return P1;
+  80   2                 case 0xF2 : return P1MDIN;
+  81   2                 case 0xA5 : return P1MDOUT;
+  82   2                 case 0xD5 : return P1SKIP;
+  83   2                 case 0xA0 : return P2;
+  84   2                 case 0xF3 : return P2MDIN;
+  85   2                 case 0xA6 : return P2MDOUT;
+  86   2                 case 0xD6 : return P2SKIP;
+  87   2                 case 0xB0 : return P3;
+  88   2                 case 0xF4 : return P3MDIN;
+  89   2                 case 0xA7 : return P3MDOUT;
+  90   2                 case 0xDF : return P3SKIP;
+  91   2                 case 0xC7 : return P4;
+  92   2                 case 0xF5 : return P4MDIN;
+  93   2                 case 0xAE : return P4MDOUT;
+  94   2      
+  95   2                 default   : break;
+  96   2         }
+  97   1      
+  98   1         return 0xFFFF;
+  99   1      }
+ 100          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    380    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+C51 COMPILER V9.53.0.0   MCU_REGISTER                                                      08/06/2020 18:09:17 PAGE 3   
+
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

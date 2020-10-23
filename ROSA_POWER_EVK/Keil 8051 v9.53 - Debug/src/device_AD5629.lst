@@ -1,0 +1,125 @@
+C51 COMPILER V9.60.0.0   DEVICE_AD5629                                                     08/26/2020 14:49:39 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE DEVICE_AD5629
+OBJECT MODULE PLACED IN .\src\device_AD5629.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.60\BIN\C51.exe D:\workfile\ROSA
+                    -_EVK_V2\software\F00016_ROSA_POWE_EVK_V2\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\device_AD5629.c OMF2 SMALL DEBUG OBJE
+                    -CTEXTEND ROM(LARGE) WARNINGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/S
+                    -implicityStudio/v4/developer/sdks/8051/v4.1.7//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdk
+                    -s/8051/v4.1.7//Device/C8051F340/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.7//examples/C8051F340DK/
+                    -USB/USBXpress/C8051F340_USBXpress_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.7//Lib/USBXpress)
+                    - PRINT(.\src\device_AD5629.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\device_AD5629.OBJ)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //--------------------------------------------------------------------------
+   4          //
+   5          // file name  :       adc_0.c
+   6          //
+   7          // description:       AD5629R Driver
+   8          //
+   9          // Target     :       AD5629R
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //--------------------------------------------------------------------------
+  15          
+  16          #include "include.h"
+  17          
+  18          uint8_t  slave;
+  19          
+  20          SI_SEGMENT_VARIABLE( DAC_array[8], uint16_t, SI_SEG_XDATA );
+  21          //-----------------------------------------------------------------------------
+  22          // AD5629_Init
+  23          //-----------------------------------------------------------------------------
+  24          //
+  25          // Return Value:  None
+  26          // Parameters:    channel,data
+  27          //
+  28          // Configures     set AD5629 DAC value
+  29          //
+  30          //-----------------------------------------------------------------------------
+  31           uint8_t        AD5629_Init ( void )
+  32           {
+  33   1              uint8_t error;
+  34   1              uint8_t i;
+  35   1      
+  36   1              slave = (AD5629R_SLAVE_ADDR(0x02)<<1);
+  37   1      
+  38   1              for( i = 0; i < 8; i++ )
+  39   1              {
+  40   2                      DAC_array[i] = 0x1480;
+  41   2              }
+  42   1      
+  43   1              // reset
+  44   1              error = AD5629_Write( AD5629R_CMD_RESET, AD5629R_ADDR_DAC_ALL, 0xFFFF );
+  45   1      
+  46   1              delay_us_timer1( 1000 );
+  47   1      
+  48   1              // Power-down mode
+  49   1              error = AD5629_Write( AD5629R_CMD_POWERDOWN, AD5629R_ADDR_DAC_ALL, 0x00FF );
+  50   1      
+C51 COMPILER V9.60.0.0   DEVICE_AD5629                                                     08/26/2020 14:49:39 PAGE 2   
+
+  51   1              delay_us_timer1( 1000 );
+  52   1      
+  53   1              // Load clear code register.
+  54   1              error = AD5629_Write( AD5629R_CMD_LOAD_CLEAR_CODE, AD5629R_ADDR_DAC_ALL, 0x0002 );
+  55   1      
+  56   1              delay_us_timer1( 1000 );
+  57   1      
+  58   1              // Set up internal REF register.
+  59   1              error = AD5629_Write( AD5629R_CMD_SET_INT_REF, AD5629R_ADDR_DAC_ALL, 0x0001 );
+  60   1              delay_us_timer1( 1000 );
+  61   1              // Write to Input Register n, update all.
+  62   1              error = AD5629_Write( AD5629R_CMD_WRITE_INPUT_N_UPDATE_ALL, AD5629R_ADDR_DAC_ALL, DAC_array[0] );
+  63   1      
+  64   1              return error;
+  65   1       }
+  66          
+  67          //-----------------------------------------------------------------------------
+  68          // AD5629_Write
+  69          //-----------------------------------------------------------------------------
+  70          //
+  71          // Return Value:  None
+  72          // Parameters:    channel,data
+  73          //
+  74          // Configures     set AD5629 DAC value
+  75          //
+  76          //-----------------------------------------------------------------------------
+  77          uint8_t AD5629_Write( uint8_t COMMAND, uint8_t ADDR, uint16_t DAC )
+  78          {
+  79   1              uint8_t address;
+  80   1              uint8_t array[2];
+  81   1              uint8_t error;
+  82   1      
+  83   1              address  = ((COMMAND<<4)&0xF0) | ((ADDR<<0)&0x0F);
+  84   1              array[0] = (uint8_t)(DAC>>8);
+  85   1              array[1] = (uint8_t)(DAC>>0);
+  86   1      
+  87   1              error = I2C_Master_writeBytes( slave, address, 2, array );
+  88   1      
+  89   1              return error;
+  90   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    168    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     16    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

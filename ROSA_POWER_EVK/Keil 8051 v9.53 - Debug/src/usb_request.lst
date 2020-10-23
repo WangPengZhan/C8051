@@ -1,0 +1,111 @@
+C51 COMPILER V9.53.0.0   USB_REQUEST                                                       08/06/2020 18:09:20 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE USB_REQUEST
+OBJECT MODULE PLACED IN .\src\usb_request.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\usb_request.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVE
+                    -L(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/sd
+                    -ks/8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F340
+                    -/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpre
+                    -ss_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\usb_request.lst) C
+                    -OND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\usb_request.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       usb_request.c
+   6          //
+   7          // description:       usb ISR request process
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          #include "include.h"
+  16          
+  17          #define USB_BUFFER_SIZE     (COMMAND_BUFFER_SIZE+6)       /// Size of USB buffer
+  18          
+  19          SI_SEGMENT_VARIABLE( usb_msg, extern udi_command_msg_s, SI_SEG_XDATA);
+  20          
+  21          SI_SEGMENT_VARIABLE(readLen,  uint16_t, SI_SEG_IDATA);
+  22          SI_SEGMENT_VARIABLE(writeLen, uint16_t, SI_SEG_IDATA);
+  23          /**************************************************************************//**
+  24           * @brief USBXpress call-back
+  25           *
+  26           * This function is called by USBXpress. In this example any received data
+  27           * sent back up to the host.
+  28           *
+  29           *****************************************************************************/
+  30          
+  31          //-----------------------------------------------------------------------------
+  32          // my_usbxp_callback
+  33          //-----------------------------------------------------------------------------
+  34          //
+  35          // Return Value:  None
+  36          // Parameters:    None
+  37          //
+  38          // Configures     usb ISR request process
+  39          //
+  40          //-----------------------------------------------------------------------------
+  41          void my_usbxp_callback(void)
+  42          {
+  43   1              uint32_t intval = USBX_getCallbackSource();
+  44   1      
+  45   1              // Suspend
+  46   1              if (intval & USBX_DEV_SUSPEND) // init
+  47   1              {
+  48   2                      // Enter suspend mode to save power
+  49   2                      USBX_suspend();
+  50   2              }
+C51 COMPILER V9.53.0.0   USB_REQUEST                                                       08/06/2020 18:09:20 PAGE 2   
+
+  51   1      
+  52   1              // Device opened
+  53   1              if (intval & USBX_DEV_OPEN) // open
+  54   1              {
+  55   2                      // Prime first read
+  56   2                      USBX_blockRead((uint8_t*)(&usb_msg), USB_BUFFER_SIZE, &readLen);
+  57   2              }
+  58   1      
+  59   1              // USB read complete
+  60   1              if (intval & USBX_RX_COMPLETE) // host send data to device 1
+  61   1              {
+  62   2                      USBX_blockRead((uint8_t*)(&usb_msg), USB_BUFFER_SIZE, &readLen);
+  63   2      
+  64   2                      USB_Command_Decode();
+  65   2      
+  66   2                      USBX_blockWrite((uint8_t*)(&usb_msg), USB_BUFFER_SIZE, &writeLen);
+  67   2              }
+  68   1      
+  69   1              // USB write complete
+  70   1              if (intval & USBX_TX_COMPLETE) // host send data to device 2
+  71   1              {
+  72   2                      // The data was sent to the host, so start a new read
+  73   2                      USBX_blockRead((uint8_t*)(&usb_msg), USB_BUFFER_SIZE, &readLen);
+  74   2              }
+  75   1      }
+  76          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    164    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----       4
+   IDATA SIZE       =      4    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

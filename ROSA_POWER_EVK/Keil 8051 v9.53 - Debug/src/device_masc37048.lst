@@ -1,0 +1,109 @@
+C51 COMPILER V9.53.0.0   DEVICE_MASC37048                                                  05/19/2020 09:45:38 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE DEVICE_MASC37048
+OBJECT MODULE PLACED IN .\src\device_masc37048.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\rosa_cdr
+                    -_evk\software\C8051\2020.05.19_c8051\ROSA_EVK_WITH_CDR\src\device_masc37048.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) W
+                    -ARNINGLEVEL(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/de
+                    -veloper/sdks/8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device
+                    -/C8051F340/inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F3
+                    -40_USBXpress_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\device_m
+                    -asc37048.lst) COND PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\device_masc37048.OBJ)
+
+line level    source
+
+   1          //--------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //--------------------------------------------------------------------------
+   4          //
+   5          // file name  :       device_masc37048.c
+   6          //
+   7          // description:       MASC37048 Driver
+   8          //
+   9          // Target     :
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2019/09/02 by wm
+  13          //
+  14          //--------------------------------------------------------------------------
+  15          
+  16          #include "include.h"
+  17          
+  18          //SI_SEGMENT_VARIABLE( DAC_array[8], uint16_t, SI_SEG_XDATA );
+  19          //-----------------------------------------------------------------------------
+  20          // MASC37048_Init
+  21          //-----------------------------------------------------------------------------
+  22          //
+  23          // Return Value:  None
+  24          // Parameters:    channel,data
+  25          //
+  26          // Configures     set MASC37048 value
+  27          //
+  28          //-----------------------------------------------------------------------------
+  29           uint8_t MASC37048_Init ( void )
+  30           {
+  31   1               uint8_t error;
+  32   1              // Writing AAh will reset the digital registers. (The reset self clears!).
+  33   1          error = MASC37048_Write( 0X02, 0xAA);
+  34   1              delay_us_timer1( 1000 );
+  35   1          error = MASC37048_Write( 0X02, 0x00);
+  36   1          return error;
+  37   1       }
+  38          
+  39          //-----------------------------------------------------------------------------
+  40          // MASC37048_Write
+  41          //-----------------------------------------------------------------------------
+  42          //
+  43          // Return Value:  None
+  44          // Parameters:    channel,data
+  45          //
+  46          // Configures     set MASC37048 value
+  47          //
+  48          //-----------------------------------------------------------------------------
+  49          uint8_t MASC37048_Write (uint8_t ADDR, uint8_t buf )
+  50          {
+C51 COMPILER V9.53.0.0   DEVICE_MASC37048                                                  05/19/2020 09:45:38 PAGE 2   
+
+  51   1              uint8_t error;
+  52   1      
+  53   1              error = I2C_Master_write_byte( MASC37048_SLAVE_ADDR, ADDR, buf );
+  54   1      
+  55   1              return error;
+  56   1      }
+  57          //-----------------------------------------------------------------------------
+  58          // MASC37048_Read
+  59          //-----------------------------------------------------------------------------
+  60          //
+  61          // Return Value:  None
+  62          // Parameters:    channel,data
+  63          //
+  64          // Configures     set MASC37048 value
+  65          //
+  66          //-----------------------------------------------------------------------------
+  67          uint8_t MASC37048_Read (uint8_t addr, uint8_t *buf )
+  68          {
+  69   1              uint8_t error;
+  70   1      
+  71   1              error = I2C_Master_read_byte( MASC37048_SLAVE_ADDR, addr, buf );
+  72   1      
+  73   1              return error;
+  74   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     44    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

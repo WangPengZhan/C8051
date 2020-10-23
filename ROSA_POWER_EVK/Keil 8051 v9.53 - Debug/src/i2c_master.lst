@@ -1,0 +1,769 @@
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 1   
+
+
+C51 COMPILER V9.53.0.0, COMPILATION OF MODULE I2C_MASTER
+OBJECT MODULE PLACED IN .\src\i2c_master.OBJ
+COMPILER INVOKED BY: c:\SiliconLabs\SimplicityStudio\v4\developer\toolchains\keil_8051\9.53\BIN\C51.exe F:\work\ROSA_Pow
+                    -er\software\C8051\2020.08.06_c8051\ROSA_POWER_EVK\src\i2c_master.c OMF2 SMALL DEBUG OBJECTEXTEND ROM(LARGE) WARNINGLEVEL
+                    -(2) FLOATFUZZY(3) OPTIMIZE(8,SPEED) INTVECTOR(0X0000) INTPROMOTE INCDIR(C:/SiliconLabs/SimplicityStudio/v4/developer/sdk
+                    -s/8051/v4.1.1//Device/shared/si8051Base;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Device/C8051F340/
+                    -inc;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//examples/C8051F340DK/USB/USBXpress/C8051F340_USBXpres
+                    -s_Echo/src;C:/SiliconLabs/SimplicityStudio/v4/developer/sdks/8051/v4.1.1//Lib/USBXpress) PRINT(.\src\i2c_master.lst) CON
+                    -D PAGEWIDTH(120) PAGELENGTH(65) OBJECT(.\src\i2c_master.OBJ)
+
+line level    source
+
+   1          //-----------------------------------------------------------------------------
+   2          //      Copyright (c) 2017-2018, xy-technology International Co.,Ltd
+   3          //-----------------------------------------------------------------------------
+   4          //
+   5          // file name  :       function.c
+   6          //
+   7          // description:       I2C Master Driver
+   8          //
+   9          // Target     :       C8051F34x / C8051F38x
+  10          //
+  11          // version    :       V100.001
+  12          //                                        2017/11/16 by roy zhou
+  13          //
+  14          //-----------------------------------------------------------------------------
+  15          #include "include.h"
+  16          
+  17          //-----------------------------------------------------------------------------
+  18          // I2C_Master_start
+  19          //-----------------------------------------------------------------------------
+  20          //
+  21          // Return Value:  None
+  22          // Parameters:    None
+  23          //
+  24          // Configures     Send I2C Start signal
+  25          //
+  26          //-----------------------------------------------------------------------------
+  27          uint8_t I2C_Master_start(void)
+  28          {
+  29   1              // ¸ù¾ÝSCL SDAµÄ²»Í¬³õÊ¼×´Ì¬£¬½«SCL SDAµÄÒý½ÅÀ­¸ßÎª1£¬×¼±¸ºÃ£¬²¢±ÜÃâ³öÏÖSTOPµÄ×´Ì¬
+  30   1              if ( Get_SCL() == 1 )
+  31   1              {
+  32   2                      if ( Get_SDA() == 0 )
+  33   2                      {
+  34   3                              SCL_L();
+  35   3                              delay_us_timer1(Rise_Time_Delay);
+  36   3                              SDA_HIZ();
+  37   3                              delay_us_timer1(Rise_Time_Delay);
+  38   3                              SCL_HIZ();
+  39   3                      }
+  40   2              }
+  41   1              else
+  42   1              {
+  43   2                      if ( Get_SDA() == 1 ) // Ê±ÖÓÏßÎªµÍ£¬Êý¾ÝÏßÎª¸ß
+  44   2                      {
+  45   3                              SCL_HIZ();
+  46   3                      }
+  47   2                      else // Ê±ÖÓÏßÎªµÍ£¬Êý¾ÝÏßÎªµÍ
+  48   2                      {
+  49   3                              SDA_HIZ();
+  50   3                              delay_us_timer1(Rise_Time_Delay);
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 2   
+
+  51   3                              SCL_HIZ();
+  52   3                      }
+  53   2              }
+  54   1      
+  55   1              delay_us_timer1(Rise_Time_Delay);
+  56   1      
+  57   1              if (( Get_SCL() == 1 ) && ( Get_SDA() == 1 ))
+  58   1              {
+  59   2                      delay_us_timer1(I2C_Master_HoldTime);
+  60   2                      SDA_L();
+  61   2                      delay_us_timer1(I2C_Master_HoldTime);
+  62   2                      SCL_L();
+  63   2                      delay_us_timer1(I2C_Master_Delay);  // ÎªÁË±£³ÖSCLÎªµÍµçÆ½µÄÊ±¼äÔ¼Îª°ëÖÜÆÚ
+  64   2      
+  65   2                      return 0;
+  66   2              }
+  67   1      
+  68   1              return 1;
+  69   1      }
+  70          
+  71          
+  72          
+  73          //-----------------------------------------------------------------------------
+  74          // I2C_Master_stop
+  75          //-----------------------------------------------------------------------------
+  76          //
+  77          // Return Value:  None
+  78          // Parameters:    None
+  79          //
+  80          // Configures     Send I2C Stop signal
+  81          //
+  82          //-----------------------------------------------------------------------------
+  83          uint8_t I2C_Master_stop(void)
+  84          {
+  85   1              // ¸ù¾ÝSCL SDAµÄ²»Í¬³õÊ¼×´Ì¬£¬½«SCL=1 SDA=0£¬Í¬Ê±±ÜÃâ³öÏÖSTOPµÄ×´Ì¬
+  86   1              if ( Get_SCL() == 0 )
+  87   1              {
+  88   2                      if ( Get_SDA() == 0 ) // SCL=0 SDA=0
+  89   2                      {
+  90   3                              SCL_HIZ();
+  91   3                      }
+  92   2                      else // SCL=0 SDA=1
+  93   2                      {
+  94   3                              SDA_L();
+  95   3                              delay_us_timer1(Rise_Time_Delay);
+  96   3                              SCL_HIZ();
+  97   3                      }
+  98   2              }
+  99   1              else
+ 100   1              {
+ 101   2                      if ( Get_SDA() == 1 ) // SCL=1 SDA=1
+ 102   2                      {
+ 103   3                              SCL_L();
+ 104   3                              delay_us_timer1(Rise_Time_Delay);
+ 105   3                              SDA_L();
+ 106   3                              delay_us_timer1(Rise_Time_Delay);
+ 107   3                              SCL_HIZ();
+ 108   3                      }
+ 109   2              }
+ 110   1      
+ 111   1              delay_us_timer1(Rise_Time_Delay); // µÈ´ýSCL SDAÎÈ¶¨
+ 112   1      
+ 113   1              if ( ( Get_SCL() == 1 ) && ( Get_SDA() == 0 ) )
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 3   
+
+ 114   1              {
+ 115   2                      delay_us_timer1(I2C_Master_HoldTime);
+ 116   2                      SDA_HIZ();
+ 117   2                      delay_us_timer1(I2C_Master_HoldTime);
+ 118   2      
+ 119   2                      if (( Get_SCL() == 1 ) && ( Get_SDA() == 1 ))
+ 120   2                  {
+ 121   3                      return 0; // SCL SDA¾ùÎª¸ß Õý³£
+ 122   3                  }
+ 123   2                  else
+ 124   2                  {
+ 125   3                     return 1; // SCL SDAÎÞ·¨´ïµ½ÖÕÖ¹×´Ì¬£¬±¨¸æÒì³£
+ 126   3                  }
+ 127   2              }
+ 128   1      
+ 129   1              return 1; // SCL SDAÎÞ·¨Éè¶¨Îª³õÊ¼×´Ì¬£¬±¨¸æÒì³£
+ 130   1      }
+ 131          
+ 132          
+ 133          //-----------------------------------------------------------------------------
+ 134          // I2C_Master_bit_out
+ 135          //-----------------------------------------------------------------------------
+ 136          //
+ 137          // Return Value:  None
+ 138          // Parameters:    send bit
+ 139          //
+ 140          // Configures     Send one bit to I2C slave
+ 141          //
+ 142          //-----------------------------------------------------------------------------
+ 143          uint8_t I2C_Master_bit_out( uint8_t bit_out)
+ 144          {
+ 145   1              uint8_t timercount;
+ 146   1      
+ 147   1              SDA_OUT(bit_out);                              // Êä³öÒ»¸öbitÊý¾Ýµ½SDAÊý¾ÝÏß
+ 148   1      
+ 149   1              delay_us_timer1(Rise_Time_Delay);              // ÒªÇóµÈ´ýÊ±¼ä´óÓÚ2us
+ 150   1      
+ 151   1              if ( Get_SDA() != bit_out )                    // ¼ì²éSDAÊÇ·ñÓëÄ¿±êÖµÒ»ÖÂ£¬²»Ò»ÖÂÔò±¨´í
+ 152   1              {
+ 153   2                      return 1;
+ 154   2              }
+ 155   1      
+ 156   1              SCL_HIZ();                                     // À­¸ßÊ±ÖÓÏß
+ 157   1      
+ 158   1              timercount = SCL_Stretch_Timeout;              // ÉèÖÃ³¬Ê±µÈ´ýÊ±¼ä£¬Ê±ÖÓÖÜÆÚ£º8
+ 159   1      
+ 160   1              delay_us_timer1(Rise_Time_Delay);              // ÒªÇóµÈ´ýÊ±¼ä´óÓÚ2us
+ 161   1      
+ 162   1              while( !Get_SCL() )                            // ¼ì²éSCL×´Ì¬ÊÇ·ñÎª¸ß£¬²»Îª¸ßÔòµÈ´ý£¬²»Ö´ÐÐwhile£¬Ê±ÖÓÖÜÆ
+             -Ú£º3
+ 163   1              {
+ 164   2                      delay_us_timer1(I2C_Master_HaftCycle);
+ 165   2      
+ 166   2                      if ( timercount-- == 0 )                    // ³¬¹ý8¸öI2C×ÜÏßÖÜÆÚSCLÃ»ÓÐ»Ö¸´£¬Ôò±¨´í
+ 167   2                      {
+ 168   3                       return 1;
+ 169   3                      }
+ 170   2              }
+ 171   1      
+ 172   1              delay_us_timer1( I2C_Master_Delay );            // ÑÓÊ±£¬¿ØÖÆ´«ËÍËÙÂÊ
+ 173   1      
+ 174   1              SCL_L();                                        // À­µÍSCLÊ±ÖÓÏß
+ 175   1      
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 4   
+
+ 176   1              delay_us_timer1( I2C_Master_Delay );            // ÑÓÊ±£¬¿ØÖÆ´«ËÍËÙÂÊ
+ 177   1      
+ 178   1              return 0;                                       // º¯ÊýÖ´ÐÐÍê
+ 179   1      }
+ 180          
+ 181          
+ 182          //-----------------------------------------------------------------------------
+ 183          // I2C_Master_bit_in
+ 184          //-----------------------------------------------------------------------------
+ 185          //
+ 186          // Return Value:  None
+ 187          // Parameters:    receive bit
+ 188          //
+ 189          // Configures     Receive one bit from I2C slave
+ 190          //
+ 191          //-----------------------------------------------------------------------------
+ 192          uint8_t I2C_Master_bit_in( uint8_t *bit_in)
+ 193          {
+ 194   1              uint8_t timercount;
+ 195   1      
+ 196   1              SDA_HIZ();                              // ½«SDAÉè¶¨Îª¸ß×èÄ£Ê½
+ 197   1      
+ 198   1              delay_us_timer1(Rise_Time_Delay);       // µÈ´ýSDAÏßÂ·ÎÈ¶¨
+ 199   1      
+ 200   1              SCL_HIZ();                              // À­¸ßÊ±ÖÓÏß
+ 201   1      
+ 202   1              timercount = SCL_Stretch_Timeout;   // ÉèÖÃ³¬Ê±µÈ´ýÊ±¼ä£¬Ê±ÖÓÖÜÆÚ£º8
+ 203   1      
+ 204   1              delay_us_timer1(Rise_Time_Delay);   // µÈ´ýSCLÏßÂ·ÎÈ¶¨
+ 205   1      
+ 206   1              while( !Get_SCL() )                 // ¼ì²éSCL×´Ì¬ÊÇ·ñÎª¸ß£¬²»Îª¸ßÔòµÈ´ý£¬²»Ö´ÐÐwhile£¬Ê±ÖÓÖÜÆÚ£º3
+ 207   1              {
+ 208   2                      delay_us_timer1(I2C_Master_HaftCycle);
+ 209   2      
+ 210   2                      if ( timercount-- == 0 )       // ³¬¹ý8¸öI2C×ÜÏßÖÜÆÚSCLÃ»ÓÐ»Ö¸´£¬Ôò±¨´í
+ 211   2                      {
+ 212   3                              return 1;
+ 213   3                      }
+ 214   2              }
+ 215   1      
+ 216   1              *bit_in = Get_SDA();
+ 217   1      
+ 218   1              delay_us_timer1( I2C_Master_Delay );
+ 219   1      
+ 220   1              SCL_L();
+ 221   1      
+ 222   1              delay_us_timer1( I2C_Master_Delay );
+ 223   1      
+ 224   1              return 0;
+ 225   1      }
+ 226          
+ 227          //-----------------------------------------------------------------------------
+ 228          // I2C_Master_byte_out
+ 229          //-----------------------------------------------------------------------------
+ 230          //
+ 231          // Return Value:  None
+ 232          // Parameters:    send byte
+ 233          //
+ 234          // Configures     Send one byte to I2C slave
+ 235          //
+ 236          //-----------------------------------------------------------------------------
+ 237          uint8_t I2C_Master_byte_out( uint8_t byte_out)
+ 238          {
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 5   
+
+ 239   1              uint8_t   bit_count = 8;
+ 240   1              uint8_t   errorcode;
+ 241   1              uint8_t   ack;
+ 242   1      
+ 243   1              while (bit_count)
+ 244   1              {
+ 245   2                      if ( byte_out & 0x80 )                            // ´«ËÍÒ»¸öbitÊý¾Ý1
+ 246   2                      {
+ 247   3                              if ( I2C_Master_bit_out(1) )
+ 248   3                              {
+ 249   4                          return 1;
+ 250   4                              }
+ 251   3                      }
+ 252   2                      else                                              // ´«ËÍÒ»¸öbitÊý¾Ý0
+ 253   2                      {
+ 254   3                              if ( I2C_Master_bit_out(0) )
+ 255   3                              {
+ 256   4                          return 1;
+ 257   4                              }
+ 258   3                      }
+ 259   2      
+ 260   2                      byte_out <<= 1;
+ 261   2                      bit_count--;
+ 262   2              }
+ 263   1      
+ 264   1              errorcode = I2C_Master_bit_in( &ack );
+ 265   1              if (( errorcode == 1 ) || ( ack == 1 ))
+ 266   1              {
+ 267   2                      return 2;
+ 268   2              }
+ 269   1      
+ 270   1              return 0;
+ 271   1      }
+ 272          
+ 273          
+ 274          //-----------------------------------------------------------------------------
+ 275          // I2C_Master_byte_in
+ 276          //-----------------------------------------------------------------------------
+ 277          //
+ 278          // Return Value:  None
+ 279          // Parameters:    receive byte
+ 280          //
+ 281          // Configures     Receive one byte from I2C slave
+ 282          //
+ 283          //-----------------------------------------------------------------------------
+ 284          uint8_t I2C_Master_byte_in (uint8_t ack_out, uint8_t *byte_in)
+ 285          {
+ 286   1              uint8_t bit_count = 8;
+ 287   1              uint8_t bit_in;
+ 288   1      
+ 289   1              *byte_in  = 0;
+ 290   1      
+ 291   1              while (bit_count)
+ 292   1              {
+ 293   2                      *byte_in = (*byte_in) << 1;
+ 294   2      
+ 295   2                      if ( I2C_Master_bit_in( &bit_in ) ) // ¶ÁÈ¡Ò»¸öbitµÄÊý¾Ý
+ 296   2                      {
+ 297   3                       return 1;
+ 298   3                      }
+ 299   2      
+ 300   2                      *byte_in = (*byte_in) | bit_in;
+ 301   2                      bit_count--;
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 6   
+
+ 302   2              }
+ 303   1      
+ 304   1              if ( I2C_Master_bit_out(ack_out) )
+ 305   1              {
+ 306   2                      return 1;
+ 307   2              }
+ 308   1      
+ 309   1              return 0;
+ 310   1      }
+ 311          
+ 312          
+ 313          //-----------------------------------------------------------------------------
+ 314          // I2C_Master_Init
+ 315          //-----------------------------------------------------------------------------
+ 316          //
+ 317          // Return Value:  None
+ 318          // Parameters:    None
+ 319          //
+ 320          // Configures     Initialize I2C Master
+ 321          //
+ 322          //-----------------------------------------------------------------------------
+ 323          uint8_t I2C_Master_Init(void)
+ 324          {
+ 325   1              SCL_L();
+ 326   1              SDA_L();
+ 327   1      
+ 328   1              delay_us_timer1(Rise_Time_Delay);
+ 329   1      
+ 330   1              SDA_HIZ();
+ 331   1              SCL_HIZ();
+ 332   1      
+ 333   1              delay_us_timer1(Rise_Time_Delay);            // µÈ´ýÊ±ÖÓÉÏÉýÑØÍê³É
+ 334   1      
+ 335   1              if (( Get_SCL() == 1 ) && ( Get_SDA() == 1 ))
+ 336   1              {
+ 337   2                      return 0;                                // ³õÊ¼»¯³É¹¦
+ 338   2              }
+ 339   1      
+ 340   1              return 1;                                    // ¹Ü½Å×´Ì¬²»¶Ô£¬³õÊ¼»¯Òì³£
+ 341   1      }
+ 342          
+ 343          
+ 344          //-----------------------------------------------------------------------------
+ 345          // I2C_Master_read_byte
+ 346          //-----------------------------------------------------------------------------
+ 347          //
+ 348          // Return Value:  0 : Success / 1 : Error
+ 349          // Parameters:    None
+ 350          //
+ 351          // Configures     send one byte registet adress and read one byte data
+ 352          //
+ 353          //-----------------------------------------------------------------------------
+ 354          uint8_t I2C_Master_read_byte ( uint8_t device, uint8_t address, uint8_t *bufPtr )
+ 355          {
+ 356   1              // ·¢ËÍSTARTÐÅºÅ
+ 357   1              if ( I2C_Master_start() )
+ 358   1              {
+ 359   2                      I2C_Master_stop();
+ 360   2                      return 1;
+ 361   2              }
+ 362   1      
+ 363   1              // ¶ÔÉè±¸µØÖ·½øÐÐSLA+WÑ°Ö·
+ 364   1              if ( I2C_Master_byte_out( (device & 0xFE) ) )
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 7   
+
+ 365   1              {
+ 366   2                      I2C_Master_stop();
+ 367   2                      return 2;
+ 368   2              }
+ 369   1      
+ 370   1              // Ð´ÈëÊý¾ÝÐ´ÈëµÄ×ÓµØÖ·
+ 371   1              if ( I2C_Master_byte_out(address) )
+ 372   1              {
+ 373   2                 I2C_Master_stop();
+ 374   2                 return 3;
+ 375   2              }
+ 376   1      
+ 377   1              // ·¢ËÍRESTARTÐÅºÅ
+ 378   1              if ( I2C_Master_start() )
+ 379   1              {
+ 380   2                      I2C_Master_stop();
+ 381   2                      return 4;
+ 382   2              }
+ 383   1      
+ 384   1              // ¶ÔÉè±¸µØÖ·½øÐÐSLA+RÑ°Ö·
+ 385   1              if ( I2C_Master_byte_out( (device | 0x01) ) )
+ 386   1              {
+ 387   2                      I2C_Master_stop();
+ 388   2                      return 5;
+ 389   2              }
+ 390   1      
+ 391   1              // ¶ÁÈ¡Ò»¸ö×Ö½ÚµÄÊý¾Ý£¬²¢·µ»ØNACK
+ 392   1              if ( I2C_Master_byte_in(1, bufPtr) )
+ 393   1              {
+ 394   2                      I2C_Master_stop();
+ 395   2                      return 6;
+ 396   2              }
+ 397   1      
+ 398   1              // ·¢ËÍSTOPÐÅºÅ
+ 399   1              if ( I2C_Master_stop() )
+ 400   1              {
+ 401   2                      return 7;
+ 402   2              }
+ 403   1      
+ 404   1              return 0;
+ 405   1      }
+ 406          
+ 407          
+ 408          
+ 409          //-----------------------------------------------------------------------------
+ 410          // I2C_Master_write_byte
+ 411          //-----------------------------------------------------------------------------
+ 412          //
+ 413          // Return Value:  0 : Success / 1 : Error
+ 414          // Parameters:    None
+ 415          //
+ 416          // Configures     send one byte registet adress and write one byte data
+ 417          //
+ 418          //-----------------------------------------------------------------------------
+ 419          uint8_t I2C_Master_write_byte ( uint8_t device, uint8_t address, uint8_t buf )
+ 420          {
+ 421   1              // ·¢ËÍSTARTÐÅºÅ
+ 422   1              if ( I2C_Master_start() )
+ 423   1              {
+ 424   2                      I2C_Master_stop();
+ 425   2                      return 1;
+ 426   2              }
+ 427   1      
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 8   
+
+ 428   1              // ¶ÔÉè±¸µØÖ·½øÐÐSLA+WÑ°Ö·
+ 429   1              if ( I2C_Master_byte_out( (device & 0xFE) ) )
+ 430   1              {
+ 431   2                      I2C_Master_stop();
+ 432   2                      return 2;
+ 433   2              }
+ 434   1      
+ 435   1              // Ð´ÈëÊý¾ÝÐ´ÈëµÄ×ÓµØÖ·
+ 436   1              if ( I2C_Master_byte_out(address) )
+ 437   1              {
+ 438   2                      I2C_Master_stop();
+ 439   2                      return 3;
+ 440   2              }
+ 441   1      
+ 442   1              // Ð´ÈëÊý¾Ý
+ 443   1              if ( I2C_Master_byte_out(buf) )
+ 444   1              {
+ 445   2                      I2C_Master_stop();
+ 446   2                      return 4;
+ 447   2              }
+ 448   1      
+ 449   1              // ·¢ËÍSTOPÐÅºÅ
+ 450   1              if ( I2C_Master_stop() )
+ 451   1              {
+ 452   2                      return 5;
+ 453   2              }
+ 454   1      
+ 455   1              return 0;
+ 456   1      }
+ 457          
+ 458          
+ 459          
+ 460          //-----------------------------------------------------------------------------
+ 461          // I2C_Master_readBytes
+ 462          //-----------------------------------------------------------------------------
+ 463          //
+ 464          // Return Value:  0 : Success / 1 : Error
+ 465          // Parameters:    None
+ 466          //
+ 467          // Configures     send one byte registet adress and read (length) bytes data
+ 468          //
+ 469          //-----------------------------------------------------------------------------
+ 470          uint8_t I2C_Master_readBytes( uint8_t device, uint8_t address, uint16_t length, uint8_t *bufPtr )
+ 471          {
+ 472   1              uint16_t i;
+ 473   1      
+ 474   1         // ·¢ËÍSTARTÐÅºÅ
+ 475   1         if ( I2C_Master_start() )
+ 476   1         {
+ 477   2            I2C_Master_stop();
+ 478   2            return 1;
+ 479   2         }
+ 480   1      
+ 481   1         // ¶ÔÉè±¸µØÖ·½øÐÐSLA+WÑ°Ö·
+ 482   1         if ( I2C_Master_byte_out( (device & 0xFE) ) )
+ 483   1         {
+ 484   2            I2C_Master_stop();
+ 485   2            return 2;
+ 486   2         }
+ 487   1      
+ 488   1         // Ð´ÈëÊý¾ÝÐ´ÈëµÄ×ÓµØÖ·
+ 489   1         if ( I2C_Master_byte_out(address) )
+ 490   1         {
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 9   
+
+ 491   2            I2C_Master_stop();
+ 492   2            return 3;
+ 493   2         }
+ 494   1      
+ 495   1         // ·¢ËÍRESTARTÐÅºÅ
+ 496   1         if ( I2C_Master_start() )
+ 497   1         {
+ 498   2            I2C_Master_stop();
+ 499   2            return 4;
+ 500   2         }
+ 501   1      
+ 502   1         // ¶ÔÉè±¸µØÖ·½øÐÐSLA+RÑ°Ö·
+ 503   1         if ( I2C_Master_byte_out( (device | 0x01) ) )
+ 504   1         {
+ 505   2            I2C_Master_stop();
+ 506   2            return 5;
+ 507   2         }
+ 508   1      
+ 509   1      
+ 510   1         for ( i = 0; i < length; i++ )
+ 511   1         {
+ 512   2            if ( I2C_Master_byte_in((i==(length-1))?1:0, &bufPtr[i]) )
+ 513   2            {
+ 514   3               I2C_Master_stop();
+ 515   3               return 6;
+ 516   3            }
+ 517   2         }
+ 518   1      
+ 519   1         // ·¢ËÍSTOPÐÅºÅ
+ 520   1         if ( I2C_Master_stop() )
+ 521   1         {
+ 522   2            return 7;
+ 523   2         }
+ 524   1      
+ 525   1         return 0 ;
+ 526   1      }
+ 527          
+ 528          
+ 529          //-----------------------------------------------------------------------------
+ 530          // I2C_Master_writeBytes
+ 531          //-----------------------------------------------------------------------------
+ 532          //
+ 533          // Return Value:  0 : Success / 1 : Error
+ 534          // Parameters:    None
+ 535          //
+ 536          // Configures     send one byte registet adress and write (length) bytes data
+ 537          //
+ 538          //-----------------------------------------------------------------------------
+ 539          uint8_t I2C_Master_writeBytes( uint8_t device, uint8_t address, uint16_t length, uint8_t *bufPtr )
+ 540          {
+ 541   1              uint16_t i;
+ 542   1      
+ 543   1         // ·¢ËÍSTARTÐÅºÅ
+ 544   1         if ( I2C_Master_start() )
+ 545   1         {
+ 546   2            I2C_Master_stop();
+ 547   2            return 1;
+ 548   2         }
+ 549   1      
+ 550   1         // ¶ÔÉè±¸µØÖ·½øÐÐSLA+WÑ°Ö·
+ 551   1         if ( I2C_Master_byte_out( (device & 0xFE) ) )
+ 552   1         {
+ 553   2            I2C_Master_stop();
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 10  
+
+ 554   2            return 2;
+ 555   2         }
+ 556   1      
+ 557   1         // Ð´ÈëÊý¾ÝÐ´ÈëµÄ×ÓµØÖ·
+ 558   1         if ( I2C_Master_byte_out(address) )
+ 559   1         {
+ 560   2            I2C_Master_stop();
+ 561   2            return 3;
+ 562   2         }
+ 563   1      
+ 564   1         for ( i = 0; i < length; i++ )
+ 565   1         {
+ 566   2            if ( I2C_Master_byte_out(bufPtr[i]) )
+ 567   2            {
+ 568   3               I2C_Master_stop();
+ 569   3               return 4;
+ 570   3            }
+ 571   2         }
+ 572   1      
+ 573   1         // ·¢ËÍSTOPÐÅºÅ
+ 574   1         if ( I2C_Master_stop() )
+ 575   1         {
+ 576   2             return 5;
+ 577   2         }
+ 578   1      
+ 579   1         return 0;
+ 580   1      }
+ 581          
+ 582          
+ 583          //-----------------------------------------------------------------------------
+ 584          // I2C_Master_read_word
+ 585          //-----------------------------------------------------------------------------
+ 586          //
+ 587          // Return Value:  0 : Success / 1 : Error
+ 588          // Parameters:    None
+ 589          //
+ 590          // Configures     send one byte registet adress and read one word data
+ 591          //
+ 592          //-----------------------------------------------------------------------------
+ 593          uint8_t I2C_Master_read_word( uint8_t device, uint8_t address,  uint16_t *bufPtr )
+ 594          {
+ 595   1              uint8_t buf_h,buf_l;
+ 596   1      
+ 597   1              // ·¢ËÍSTARTÐÅºÅ
+ 598   1              if ( I2C_Master_start() )
+ 599   1              {
+ 600   2                      I2C_Master_stop();
+ 601   2                      return 1;
+ 602   2              }
+ 603   1      
+ 604   1              // ¶ÔÉè±¸µØÖ·½øÐÐSLA+WÑ°Ö·
+ 605   1              if ( I2C_Master_byte_out( (device & 0xFE) ) )
+ 606   1              {
+ 607   2                      I2C_Master_stop();
+ 608   2                      return 2;
+ 609   2              }
+ 610   1      
+ 611   1              // Ð´ÈëÊý¾ÝÐ´ÈëµÄ×ÓµØÖ·
+ 612   1              if ( I2C_Master_byte_out(address) )
+ 613   1              {
+ 614   2                      I2C_Master_stop();
+ 615   2                      return 3;
+ 616   2              }
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 11  
+
+ 617   1      
+ 618   1              // ·¢ËÍRESTARTÐÅºÅ
+ 619   1              if ( I2C_Master_start() )
+ 620   1              {
+ 621   2                      I2C_Master_stop();
+ 622   2                      return 4;
+ 623   2              }
+ 624   1      
+ 625   1              // ¶ÔÉè±¸µØÖ·½øÐÐSLA+RÑ°Ö·
+ 626   1              if ( I2C_Master_byte_out( (device | 0x01) ) )
+ 627   1              {
+ 628   2                      I2C_Master_stop();
+ 629   2                      return 5;
+ 630   2              }
+ 631   1      
+ 632   1              // ¶ÁÈ¡Ò»¸ö×Ö½ÚµÄÊý¾Ý£¬²¢·µ»ØACK
+ 633   1              if ( I2C_Master_byte_in(1, &buf_h) )
+ 634   1              {
+ 635   2                      I2C_Master_stop();
+ 636   2                      return 6;
+ 637   2              }
+ 638   1      
+ 639   1              // ¶ÁÈ¡Ò»¸ö×Ö½ÚµÄÊý¾Ý£¬²¢·µ»ØNACK
+ 640   1              if ( I2C_Master_byte_in(0, &buf_l) )
+ 641   1              {
+ 642   2                      I2C_Master_stop();
+ 643   2                      return 7;
+ 644   2              }
+ 645   1      
+ 646   1              // ·¢ËÍSTOPÐÅºÅ
+ 647   1              if ( I2C_Master_stop() )
+ 648   1              {
+ 649   2                      return 8;
+ 650   2              }
+ 651   1      
+ 652   1              *bufPtr = ((uint16_t)buf_h << 8) | buf_l;
+ 653   1      
+ 654   1              return 0;
+ 655   1      }
+ 656          
+ 657          
+ 658          //-----------------------------------------------------------------------------
+ 659          // I2C_Master_write_word
+ 660          //-----------------------------------------------------------------------------
+ 661          //
+ 662          // Return Value:  0 : Success / 1 : Error
+ 663          // Parameters:    None
+ 664          //
+ 665          // Configures     send one byte registet adress and write one word data
+ 666          //
+ 667          //-----------------------------------------------------------------------------
+ 668          uint8_t I2C_Master_write_word (uint8_t device, uint8_t address, uint16_t buf )
+ 669          {
+ 670   1              // ·¢ËÍSTARTÐÅºÅ
+ 671   1              if ( I2C_Master_start() )
+ 672   1              {
+ 673   2                      I2C_Master_stop();
+ 674   2                      return 1;
+ 675   2              }
+ 676   1      
+ 677   1              // ¶ÔÉè±¸µØÖ·½øÐÐSLA+WÑ°Ö·
+ 678   1              if ( I2C_Master_byte_out( (device & 0xFE) ) )
+ 679   1              {
+C51 COMPILER V9.53.0.0   I2C_MASTER                                                        08/06/2020 18:09:17 PAGE 12  
+
+ 680   2                      I2C_Master_stop();
+ 681   2                      return 2;
+ 682   2              }
+ 683   1      
+ 684   1              // Ð´ÈëÊý¾ÝÐ´ÈëµÄ×ÓµØÖ·
+ 685   1              if ( I2C_Master_byte_out(address) )
+ 686   1              {
+ 687   2                      I2C_Master_stop();
+ 688   2                      return 3;
+ 689   2              }
+ 690   1      
+ 691   1              // Ð´ÈëÊý¾Ý
+ 692   1              if ( I2C_Master_byte_out((uint8_t)(buf >> 8)) )
+ 693   1              {
+ 694   2                      I2C_Master_stop();
+ 695   2                      return 4;
+ 696   2              }
+ 697   1      
+ 698   1              // Ð´ÈëÊý¾Ý
+ 699   1              if ( I2C_Master_byte_out((uint8_t)(buf >> 0)) )
+ 700   1              {
+ 701   2                      I2C_Master_stop();
+ 702   2                      return 5;
+ 703   2              }
+ 704   1      
+ 705   1              // ·¢ËÍSTOPÐÅºÅ
+ 706   1              if ( I2C_Master_stop() )
+ 707   1              {
+ 708   2                      return 6;
+ 709   2              }
+ 710   1      
+ 711   1              return 0;
+ 712   1      }
+ 713          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1290    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      52
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+   EDATA SIZE       =   ----    ----
+   HDATA SIZE       =   ----    ----
+   XDATA CONST SIZE =   ----    ----
+   FAR CONST SIZE   =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
